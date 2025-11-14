@@ -1,0 +1,5 @@
+{
+  "name": "Ultrasound Physics Animated Explainer",
+  "description": "An interactive web application that provides animated explanations for scenario-based questions and answers related to ultrasound physics, transducers, hemodynamics, and patient care.",
+  "requestFramePermissions": []
+}
