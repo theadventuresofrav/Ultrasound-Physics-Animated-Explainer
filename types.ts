@@ -1,7 +1,7 @@
 export interface Question {
   scenario: string;
   answer: string;
-  imageUrl?: string;
+  animationUrl?: string;
 }
 
 export interface Category {

@@ -47,8 +47,49 @@
       .animate-section-enter { 
         animation: section-enter var(--animation-duration) var(--animation-timing) forwards;
       }
+      
+      mark {
+        background-color: var(--mark-bg-color);
+        color: var(--mark-text-color);
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      /* --- Animation Player Slider --- */
+      .animation-slider {
+        background: var(--slider-track-bg);
+      }
+      .animation-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: var(--color-primary-accent-light);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background .2s;
+      }
+      .animation-slider:hover::-webkit-slider-thumb {
+        background: white;
+      }
+      .animation-slider::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: var(--color-primary-accent-light);
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+        transition: background .2s;
+      }
+      .animation-slider:hover::-moz-range-thumb {
+         background: white;
+      }
+
 
       /* --- THEME DEFINITIONS --- */
+      
+      /* --- DARK THEMES --- */
       .theme-gold { /* Celestial Gold */
         --color-primary-accent: #D4AF37;
         --color-primary-accent-dark: #B8860B;
@@ -63,6 +104,9 @@
         --color-text-heading: #ffffff;
         --color-border-base: #2d283a;
         --color-border-hover: #4a415c;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
       .theme-cosmic { /* Cosmic Cyan */
         --color-primary-accent: #06B6D4;
@@ -78,6 +122,9 @@
         --color-text-heading: #ffffff;
         --color-border-base: #102a47;
         --color-border-hover: #173d68;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
       .theme-crimson { /* Crimson Ember */
         --color-primary-accent: #EF4444;
@@ -93,6 +140,9 @@
         --color-text-heading: #ffffff;
         --color-border-base: #4d2b2b;
         --color-border-hover: #6a3e3e;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
       .theme-emerald { /* Emerald Serpent */
         --color-primary-accent: #D4AF37; 
@@ -108,6 +158,9 @@
         --color-text-heading: #ffffff;
         --color-border-base: #134e4a;
         --color-border-hover: #115e59;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
       .theme-sapphire { /* Sapphire Scribe */
         --color-primary-accent: #2563EB;
@@ -123,6 +176,9 @@
         --color-text-heading: #ffffff;
         --color-border-base: #334155;
         --color-border-hover: #475569;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
       .theme-amethyst { /* Amethyst Oracle */
         --color-primary-accent: #d946ef;
@@ -138,6 +194,9 @@
         --color-text-heading: #ffffff;
         --color-border-base: #4c1d95;
         --color-border-hover: #5b21b6;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
       .theme-obsidian { /* Obsidian Shadow */
         --color-primary-accent: #38bdf8;
@@ -153,6 +212,9 @@
         --color-text-heading: #ffffff;
         --color-border-base: #334155;
         --color-border-hover: #64748b;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
       .theme-sunstone { /* Sunstone Ritual */
         --color-primary-accent: #f97316;
@@ -168,14 +230,165 @@
         --color-text-heading: #ffffff;
         --color-border-base: #b45309;
         --color-border-hover: #c2410c;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent-light);
+        --slider-track-bg: rgba(255, 255, 255, 0.2);
       }
+
+      /* --- LIGHT THEMES --- */
+      .theme-gold-light {
+        --color-primary-accent: #B8860B;
+        --color-primary-accent-dark: #8B4513;
+        --color-primary-accent-light: #D4AF37;
+        --color-primary-accent-glow: rgba(184, 134, 11, 0.15);
+        --color-bg-base: #fdfbf6;
+        --color-bg-gradient-end: #f5f1e8;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #f9f9f9;
+        --color-text-base: #3d3d3d;
+        --color-text-muted: #7a7a7a;
+        --color-text-heading: #121212;
+        --color-border-base: #e5e2da;
+        --color-border-hover: #d1ccc1;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+      .theme-cosmic-light {
+        --color-primary-accent: #0891B2;
+        --color-primary-accent-dark: #0e7490;
+        --color-primary-accent-light: #06B6D4;
+        --color-primary-accent-glow: rgba(6, 182, 212, 0.15);
+        --color-bg-base: #f0f9ff;
+        --color-bg-gradient-end: #e0f2fe;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #f8fafc;
+        --color-text-base: #1e293b;
+        --color-text-muted: #475569;
+        --color-text-heading: #020617;
+        --color-border-base: #e2e8f0;
+        --color-border-hover: #cbd5e1;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+      .theme-crimson-light {
+        --color-primary-accent: #DC2626;
+        --color-primary-accent-dark: #991b1b;
+        --color-primary-accent-light: #EF4444;
+        --color-primary-accent-glow: rgba(239, 68, 68, 0.15);
+        --color-bg-base: #fef2f2;
+        --color-bg-gradient-end: #fee2e2;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #fefafa;
+        --color-text-base: #374151;
+        --color-text-muted: #6b7280;
+        --color-text-heading: #111827;
+        --color-border-base: #f3e8e8;
+        --color-border-hover: #e5dada;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+      .theme-emerald-light {
+        --color-primary-accent: #B8860B; /* Muted gold */
+        --color-primary-accent-dark: #805b0d;
+        --color-primary-accent-light: #D4AF37;
+        --color-primary-accent-glow: rgba(184, 134, 11, 0.15);
+        --color-bg-base: #f0fdf4;
+        --color-bg-gradient-end: #dcfce7;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #fafdfb;
+        --color-text-base: #14532d;
+        --color-text-muted: #166534;
+        --color-text-heading: #064e3b;
+        --color-border-base: #d1fae5;
+        --color-border-hover: #a7f3d0;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+      .theme-sapphire-light {
+        --color-primary-accent: #1D4ED8;
+        --color-primary-accent-dark: #1e3a8a;
+        --color-primary-accent-light: #2563EB;
+        --color-primary-accent-glow: rgba(37, 99, 235, 0.15);
+        --color-bg-base: #eff6ff;
+        --color-bg-gradient-end: #dbeafe;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #f9fbff;
+        --color-text-base: #1e3a8a;
+        --color-text-muted: #1d4ed8;
+        --color-text-heading: #1e293b;
+        --color-border-base: #dbeafe;
+        --color-border-hover: #bfdbfe;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+      .theme-amethyst-light {
+        --color-primary-accent: #c026d3;
+        --color-primary-accent-dark: #86198f;
+        --color-primary-accent-light: #d946ef;
+        --color-primary-accent-glow: rgba(217, 70, 239, 0.15);
+        --color-bg-base: #faf5ff;
+        --color-bg-gradient-end: #f3e8ff;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #fbfaff;
+        --color-text-base: #3b0764;
+        --color-text-muted: #581c87;
+        --color-text-heading: #2e1065;
+        --color-border-base: #e9d5ff;
+        --color-border-hover: #d8b4fe;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+      .theme-obsidian-light {
+        --color-primary-accent: #0ea5e9;
+        --color-primary-accent-dark: #0369a1;
+        --color-primary-accent-light: #38bdf8;
+        --color-primary-accent-glow: rgba(56, 189, 248, 0.1);
+        --color-bg-base: #f8fafc;
+        --color-bg-gradient-end: #f1f5f9;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #f7f9fc;
+        --color-text-base: #1e293b;
+        --color-text-muted: #475569;
+        --color-text-heading: #020617;
+        --color-border-base: #e2e8f0;
+        --color-border-hover: #cbd5e1;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+      .theme-sunstone-light {
+        --color-primary-accent: #ea580c;
+        --color-primary-accent-dark: #9a3412;
+        --color-primary-accent-light: #f97316;
+        --color-primary-accent-glow: rgba(249, 115, 22, 0.15);
+        --color-bg-base: #fff7ed;
+        --color-bg-gradient-end: #ffedd5;
+        --color-bg-surface: #ffffff;
+        --color-bg-surface-light: #fffbf5;
+        --color-text-base: #451a03;
+        --color-text-muted: #7c2d12;
+        --color-text-heading: #422006;
+        --color-border-base: #fed7aa;
+        --color-border-hover: #fdb46c;
+        --mark-bg-color: var(--color-primary-accent-glow);
+        --mark-text-color: var(--color-primary-accent);
+        --slider-track-bg: rgba(0, 0, 0, 0.1);
+      }
+
     </style>
   <script type="importmap">
 {
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1"
   }
 }
 </script>
