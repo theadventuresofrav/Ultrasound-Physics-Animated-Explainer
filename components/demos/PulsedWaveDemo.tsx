@@ -5,6 +5,7 @@ import DemoSection from './DemoSection';
 import ControlButton from './ControlButton';
 import KnowledgeCheck from './KnowledgeCheck';
 import { useSound } from '../../contexts/SoundContext';
+import { TargetIcon, SparklesIcon, BrainIcon } from '../Icons';
 
 const GlowingOrb: React.FC<{ color: string, glow: string }> = ({ color, glow }) => (
     <div
@@ -27,8 +28,8 @@ const RangeEquationSection: React.FC = () => {
   const timelineControls = useAnimation();
   const { playClick, playScan } = useSound();
 
-  const animationDuration = 3; // base duration for 100% depth trip
-  const speedOfSound = 1540; // m/s
+  const animationDuration = 3; 
+  const speedOfSound = 1540; 
   const maxDepthCm = 15;
 
   const calculatedDepth = useMemo(() => {
@@ -52,16 +53,13 @@ const RangeEquationSection: React.FC = () => {
     timelineControls.set({ height: '0%' });
     animationControls.set({ y: 0, opacity: 1 });
 
-    // 1. Transmit Phase
     await animationControls.start({
         y: (targetDepthPercent / 100) * 230,
         transition: { duration: oneWayTime, ease: 'linear' }
     });
     
-    // 2. Reflect Phase
     setOrbState({ color: 'rgba(34, 211, 238, 1)', glow: 'rgba(103, 232, 249, 0.7)' });
     
-    // 3. Receive Phase
     await Promise.all([
         animationControls.start({
             y: 0,
@@ -82,6 +80,7 @@ const RangeEquationSection: React.FC = () => {
     <DemoSection
       title="The Range Equation Lab"
       description="Ultrasound machines calculate depth based on the 'round-trip' time of sound. Depth = (Speed × Time) / 2. Manipulate the target to analyze temporal shifts."
+      objectives={["Verify the 13µs/cm round-trip rule", "Analyze go-return time dynamics", "Identify reflector depth precision"]}
     >
       <div className="flex flex-col md:flex-row gap-10">
         <div className="w-full md:w-2/3 flex gap-6">
@@ -179,14 +178,185 @@ const RangeEquationSection: React.FC = () => {
   );
 };
 
-// --- Section 2: Duty Factor HUD ---
+// --- Section 2: Pulse Timing & PRF Lab ---
+const PulseTimingLab: React.FC = () => {
+    const [depth, setDepth] = useState(10); // cm
+    const [prf, setPrf] = useState(5); // kHz
+    const { playHover, playClick } = useSound();
+
+    // Derived Constants
+    const SPEED_OF_SOUND_MS = 1540;
+    const pd = 2; // Fixed Pulse Duration in µs for visualization
+
+    // PRP = 1 / PRF
+    const prpMicro = useMemo(() => (1 / (prf * 1000)) * 1000000, [prf]);
+    
+    // Required PRP based on Depth (13µs/cm rule)
+    const minPrpForDepth = useMemo(() => depth * 13, [depth]);
+    
+    // Maximum safe PRF for current depth (77,000 / depth)
+    const maxSafePrf = useMemo(() => 77 / depth, [depth]);
+    
+    const isAmbiguityRisk = prpMicro < minPrpForDepth;
+    const listeningTime = Math.max(0, prpMicro - pd);
+
+    return (
+        <DemoSection
+            title="PRF & Timing Interface"
+            description="The system must wait for the previous echo to return before sending the next pulse. Increasing depth requires a longer PRP (Pulse Repetition Period), which physically limits the maximum PRF (Frequency). Exceeding this limit causes Range Ambiguity artifact."
+            objectives={["Identify Depth-PRF inverse relationship", "Analyze Pulse-Echo timing diagrams", "Define Range Ambiguity thresholds"]}
+        >
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                {/* Visual Timeline Section */}
+                <div className="xl:col-span-8 space-y-6">
+                    <div className={`h-64 bg-black rounded-[2.5rem] border-2 transition-all duration-500 relative overflow-hidden shadow-2xl ${isAmbiguityRisk ? 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]' : 'border-white/10'}`}>
+                        {/* Grid */}
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none" />
+                        
+                        <div className="absolute top-4 left-6 flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full ${isAmbiguityRisk ? 'bg-red-500 animate-pulse' : 'bg-cyan-400'}`} />
+                            <span className="text-[10px] font-mono text-white/50 uppercase tracking-[0.4em]">Real-time_Chronograph</span>
+                        </div>
+
+                        {/* Scrolling Pulses */}
+                        <div className="absolute inset-0 flex items-center">
+                            <motion.div 
+                                className="flex gap-0 h-24"
+                                animate={{ x: [-200, 0] }}
+                                transition={{ duration: (prpMicro / 500), repeat: Infinity, ease: "linear" }}
+                            >
+                                {[...Array(10)].map((_, i) => (
+                                    <div key={i} className="flex h-full items-end" style={{ width: `${prpMicro / 10}px` }}>
+                                        {/* The Pulse */}
+                                        <div className="w-3 h-full bg-gradient-to-t from-[var(--gold)] to-white relative rounded-t-sm shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+                                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[7px] font-bold text-white/40">TX</div>
+                                        </div>
+                                        {/* Listening Gap */}
+                                        <div className={`h-1 flex-grow transition-colors duration-300 ${isAmbiguityRisk ? 'bg-red-500/20' : 'bg-cyan-500/5'}`}>
+                                             {i === 5 && (
+                                                <div className="absolute bottom-[-10px] left-0 right-0 flex justify-center">
+                                                    <span className="text-[7px] font-mono text-white/20">LISTENING_WINDOW</span>
+                                                </div>
+                                             )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </motion.div>
+                        </div>
+
+                        {/* Overlays */}
+                        <AnimatePresence>
+                            {isAmbiguityRisk && (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 1.1 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="absolute inset-0 bg-red-950/20 flex flex-col items-center justify-center backdrop-blur-[2px] z-20"
+                                >
+                                    <div className="bg-red-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.3em] mb-2 shadow-2xl">
+                                        Buffer_Overflow: Range_Ambiguity
+                                    </div>
+                                    <p className="text-[9px] text-red-200/60 uppercase tracking-widest font-mono">Insufficient_Recv_Interval</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Telemetry Strip */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                            <p className="text-[8px] text-white/30 uppercase mb-1">PRP_Cycle</p>
+                            <p className="text-xl font-black text-white font-mono">{prpMicro.toFixed(0)}<span className="text-[10px] ml-1 opacity-30">µs</span></p>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                            <p className="text-[8px] text-white/30 uppercase mb-1">Listen_Idle</p>
+                            <p className="text-xl font-black text-cyan-400 font-mono">{listeningTime.toFixed(0)}<span className="text-[10px] ml-1 opacity-30">µs</span></p>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                            <p className="text-[8px] text-white/30 uppercase mb-1">Safe_Floor</p>
+                            <p className="text-xl font-black text-green-400 font-mono">{minPrpForDepth.toFixed(0)}<span className="text-[10px] ml-1 opacity-30">µs</span></p>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                            <p className="text-[8px] text-white/30 uppercase mb-1">Max_PRF</p>
+                            <p className="text-xl font-black text-yellow-400 font-mono">{maxSafePrf.toFixed(1)}<span className="text-[10px] ml-1 opacity-30">kHz</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Control Panel */}
+                <div className="xl:col-span-4 space-y-6">
+                    <div className="bg-[#0c0c0e] p-8 rounded-[2.5rem] border border-white/5 space-y-8 shadow-inner">
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-end px-1">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">Imaging_Depth</label>
+                                    <p className="text-[7px] font-mono text-cyan-400/50 uppercase tracking-widest">[CM_FIELD]</p>
+                                </div>
+                                <span className="text-2xl font-black text-cyan-400 font-mono">{depth} <span className="text-xs opacity-40">cm</span></span>
+                            </div>
+                            <input 
+                                type="range" min="2" max="25" step="1" 
+                                value={depth} 
+                                onChange={e => { setDepth(Number(e.target.value)); playHover(); }} 
+                                className="w-full h-1 accent-cyan-400 bg-white/5 rounded-full" 
+                            />
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-end px-1">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">Transmit_Frequency</label>
+                                    <p className="text-[7px] font-mono text-[var(--gold)]/50 uppercase tracking-widest">[PRF_SCALE]</p>
+                                </div>
+                                <span className="text-2xl font-black text-[var(--gold)] font-mono">{prf} <span className="text-xs opacity-40">kHz</span></span>
+                            </div>
+                            <input 
+                                type="range" min="1" max="15" step="0.5" 
+                                value={prf} 
+                                onChange={e => { setPrf(Number(e.target.value)); playHover(); }} 
+                                className={`w-full h-1 bg-white/5 rounded-full transition-all ${isAmbiguityRisk ? 'accent-red-500' : 'accent-[var(--gold)]'}`} 
+                            />
+                        </div>
+
+                        <div className="pt-4 border-t border-white/5">
+                            <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                                    <BrainIcon className="w-5 h-5 text-[var(--gold)] opacity-40" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-white/60 uppercase">Calculated_Duty_Factor</p>
+                                    <p className="text-xl font-black text-white tracking-tighter tabular-nums">
+                                        {((pd / prpMicro) * 100).toFixed(3)}<span className="text-xs opacity-20 ml-1">%</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-red-500/5 p-6 rounded-[2rem] border border-red-500/10 flex items-start gap-5 relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-red-500/40" />
+                        <div className="text-lg">⚙️</div>
+                        <div>
+                            <h5 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Range_Ambiguity_Trigger</h5>
+                            <p className="text-[10px] text-white/40 leading-relaxed font-light italic">
+                                "The machine requires at least <span className="text-white font-bold">{minPrpForDepth.toFixed(0)}µs</span> to map depth accurately. Current gap: <span className={isAmbiguityRisk ? 'text-red-400' : 'text-green-400'}>{prpMicro.toFixed(0)}µs</span>."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DemoSection>
+    );
+};
+
+// --- Section 3: Duty Factor HUD ---
 const DutyFactorHUD: React.FC = () => {
-    const [prf, setPrf] = useState(4); // kHz
-    const [pd, setPd] = useState(1); // microsec
+    const [prf, setPrf] = useState(4); 
+    const [pd, setPd] = useState(1); 
     const { playHover } = useSound();
 
-    const prpMs = 1 / prf; // e.g. 0.25 ms
-    const prpMicro = prpMs * 1000; // 250 microsec
+    const prpMs = 1 / prf; 
+    const prpMicro = prpMs * 1000; 
     const dutyFactor = (pd / prpMicro) * 100;
     
     return (
@@ -264,8 +434,9 @@ const DutyFactorHUD: React.FC = () => {
 
 const PulsedWaveDemo: React.FC = () => {
   return (
-    <div className="space-y-16 py-4">
+    <div className="space-y-24 py-4">
       <RangeEquationSection />
+      <PulseTimingLab />
       <DutyFactorHUD />
       <KnowledgeCheck
         moduleId="pulsed"

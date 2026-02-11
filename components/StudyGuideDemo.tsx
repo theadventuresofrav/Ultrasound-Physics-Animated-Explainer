@@ -2,22 +2,23 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, Modality } from '@google/genai';
-import { spiCoursesExpanded } from '../../spi-course-data';
-import { ChevronRightIcon, BrainIcon, SparklesIcon, CardStackIcon, ListBulletIcon, TargetIcon, CheckCircleIcon } from '../Icons';
-import ControlButton from './ControlButton';
-import { AIStudyPlan, AIFlashcard } from '../../types';
-import ConceptCheck from './ConceptCheck';
-import { useAIHistory } from '../../contexts/AIHistoryContext';
-import { useUser } from '../../contexts/UserContext';
-import { useSound } from '../../contexts/SoundContext';
-import { PRE_GENERATED_FLASHCARDS } from '../../flashcard-data';
-import DemoSection from './DemoSection';
-import FlashcardTraining from '../FlashcardTraining';
-import FlashcardLibrary from '../FlashcardLibrary';
+import { spiCoursesExpanded } from '../spi-course-data';
+import { ChevronRightIcon, BrainIcon, SparklesIcon, CardStackIcon, ListBulletIcon, TargetIcon, CheckCircleIcon } from './Icons';
+import ControlButton from './demos/ControlButton';
+import { AIStudyPlan, AIFlashcard } from '../types';
+import ConceptCheck from './demos/ConceptCheck';
+import { useAIHistory } from '../contexts/AIHistoryContext';
+import { useUser } from '../contexts/UserContext';
+import { useSound } from '../contexts/SoundContext';
+import { PRE_GENERATED_FLASHCARDS } from '../flashcard-data';
+import DemoSection from './demos/DemoSection';
+import FlashcardTraining from './FlashcardTraining';
+import FlashcardLibrary from './FlashcardLibrary';
 
 type Tab = 'Archives' | 'Database' | 'Training' | 'Assessment';
 
-const NARRATION_CACHE_KEY_PREFIX = 'echoMastersStudyGuideNarration_v2';
+// Updated to v3 to force regeneration of study guide briefings
+const NARRATION_CACHE_KEY_PREFIX = 'echoMastersStudyGuideNarration_v3';
 
 const BriefingIcon = ({ isActive }: { isActive: boolean }) => (
     <div className="relative">

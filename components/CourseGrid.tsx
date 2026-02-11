@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CourseModule from './CourseModule';
 import { COURSE_MODULES } from '../constants';
@@ -17,7 +17,8 @@ interface CourseGridProps {
     limitToIds?: DemoId[];
 }
 
-const UserResourceCard: React.FC<{ resource: UserResource, onDelete: (id: string) => void }> = ({ resource, onDelete }) => {
+// Memoized to prevent heavy re-renders when Base64 data is present
+const UserResourceCard = memo(({ resource, onDelete }: { resource: UserResource, onDelete: (id: string) => void }) => {
     const icon = resource.category === 'PDF' ? '📄' : resource.category === 'Image' ? '🖼️' : '📁';
     const accent = resource.category === 'PDF' ? '#ef4444' : resource.category === 'Image' ? '#22c55e' : '#3b82f6';
 
@@ -56,7 +57,7 @@ const UserResourceCard: React.FC<{ resource: UserResource, onDelete: (id: string
             </div>
         </motion.div>
     );
-};
+});
 
 const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, userProfile, limitToIds }) => {
     const { addUserResource, deleteUserResource } = useUser();
@@ -65,7 +66,6 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Effect to clear status messages after a delay
     useEffect(() => {
         let timer: ReturnType<typeof setTimeout>;
         if (uploadSuccess) {
@@ -80,9 +80,10 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Simple check for browser memory safety with base64 strings
-        if (file.size > 15 * 1024 * 1024) {
-            setError("PAYLOAD_TOO_LARGE_MAX_15MB");
+        // Quota safety: standard localStorage limit is 5MB. 
+        // Base64 adds ~33% overhead, so we limit to ~3MB to be very safe.
+        if (file.size > 3 * 1024 * 1024) {
+            setError("FILE_EXCEEDS_MEMORY_QUOTA (MAX 3MB)");
             e.target.value = '';
             return;
         }
@@ -92,16 +93,12 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
         setError(null);
         setUploadSuccess(false);
 
-        // Simulate initial verification phase
-        await new Promise(r => setTimeout(r, 600));
-
-        // Simulate upload progress for tactical feel
         const progressInterval = setInterval(() => {
             setUploadProgress(prev => {
-                if (prev >= 95) return prev;
-                return prev + Math.floor(Math.random() * 12) + 5;
+                if (prev >= 90) return prev;
+                return prev + 5;
             });
-        }, 150);
+        }, 100);
 
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -110,25 +107,23 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
                 const sizeInMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
                 const category = file.type.includes('pdf') ? 'PDF' : file.type.includes('image') ? 'Image' : 'Document';
                 
-                // Finalize upload with a small delay for visual satisfaction
-                setTimeout(() => {
-                    clearInterval(progressInterval);
-                    setUploadProgress(100);
-                    addUserResource({
-                        id: `user-res-${Date.now()}`,
-                        name: file.name,
-                        type: file.type,
-                        data: base64,
-                        size: sizeInMB,
-                        timestamp: Date.now(),
-                        category: category as any
-                    });
-                    setUploading(false);
-                    setUploadSuccess(true);
-                }, 800);
+                addUserResource({
+                    id: `user-res-${Date.now()}`,
+                    name: file.name,
+                    type: file.type,
+                    data: base64,
+                    size: sizeInMB,
+                    timestamp: Date.now(),
+                    category: category as any
+                });
+                
+                clearInterval(progressInterval);
+                setUploadProgress(100);
+                setUploading(false);
+                setUploadSuccess(true);
             } catch (err) {
                 clearInterval(progressInterval);
-                setError("DATA_SYNC_CORRUPTED");
+                setError("FILE_READ_EXCEPTION");
                 setUploading(false);
             }
         };
@@ -138,7 +133,7 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
             setUploading(false);
         };
         reader.readAsDataURL(file);
-        e.target.value = ''; // Reset input
+        e.target.value = '';
     };
 
     const filteredModules = useMemo(() => {
@@ -167,7 +162,7 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
             default:
                 return base;
         }
-    }, [activeFilter, userProfile, limitToIds]);
+    }, [activeFilter, userProfile?.completedModules, limitToIds]); // Optimized dependencies
 
     const showUserResources = (activeFilter === 'Resource' || activeFilter === 'All') && !limitToIds;
 
@@ -194,7 +189,6 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
                         }`}>
                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--gold-dim),_transparent_70%)] opacity-0 group-hover:opacity-10 transition-opacity" />
                              
-                             {/* Floating Status Badge */}
                              <AnimatePresence>
                                 {(uploadSuccess || error) && (
                                     <motion.div
@@ -210,7 +204,7 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
                                 )}
                              </AnimatePresence>
 
-                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-20" onChange={handleFileUpload} accept=".pdf,image/*,.doc,.docx" disabled={uploading} />
+                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-20" onChange={handleFileUpload} accept=".pdf,image/*" disabled={uploading} />
                              
                              <div className="relative z-10 w-full flex flex-col items-center">
                                 <div className={`w-20 h-20 rounded-[1.75rem] border flex items-center justify-center text-3xl mb-6 transition-all duration-500 relative ${
@@ -226,31 +220,14 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
                                                 transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                                                 className="absolute inset-1 border-t-2 border-cyan-400 rounded-full"
                                             />
-                                            <motion.div
-                                                animate={{ rotate: -360 }}
-                                                transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                                                className="absolute inset-3 border-b-2 border-cyan-400/30 rounded-full"
-                                            />
                                             <div className="flex flex-col items-center justify-center">
                                                 <span className="text-[10px] font-black font-mono text-cyan-400">{uploadProgress}%</span>
                                             </div>
                                         </div>
                                     ) : error ? (
-                                        <motion.span 
-                                            initial={{ scale: 0.5, rotate: -45 }}
-                                            animate={{ scale: 1, rotate: 0 }}
-                                            className="drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]"
-                                        >
-                                            ⚠️
-                                        </motion.span>
+                                        <motion.span initial={{ scale: 0.5, rotate: -45 }} animate={{ scale: 1, rotate: 0 }}>⚠️</motion.span>
                                     ) : uploadSuccess ? (
-                                        <motion.span 
-                                            initial={{ scale: 0.5, y: 10 }}
-                                            animate={{ scale: 1, y: 0 }}
-                                            className="drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                                        >
-                                            ✅
-                                        </motion.span>
+                                        <motion.span initial={{ scale: 0.5, y: 10 }} animate={{ scale: 1, y: 0 }}>✅</motion.span>
                                     ) : (
                                         <span className="text-white/40 group-hover:text-[var(--gold)] transition-colors">📁</span>
                                     )}
@@ -260,36 +237,25 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
                                     <h4 className={`text-xl font-black uppercase tracking-tight transition-colors duration-500 ${
                                         uploading ? 'text-cyan-400' : 
                                         error ? 'text-red-400 font-mono text-sm' : 
-                                        uploadSuccess ? 'text-green-400 font-black' : 
+                                        uploadSuccess ? 'text-green-400' : 
                                         'text-white group-hover:text-[var(--gold)]'
                                     }`}>
-                                        {uploading ? 'Synching Data...' : error ? error : uploadSuccess ? 'Buffer Committed' : 'Personal Vault'}
+                                        {uploading ? 'Synching Data...' : error ? "Sync Error" : uploadSuccess ? 'Buffer Committed' : 'Personal Vault'}
                                     </h4>
                                     
                                     <div className="h-6 flex flex-col items-center justify-center w-full px-4">
                                         <AnimatePresence mode="wait">
                                             {uploading ? (
-                                                <motion.div 
-                                                    key="prog" initial={{ opacity: 0, scaleY: 0 }} animate={{ opacity: 1, scaleY: 1 }} exit={{ opacity: 0 }}
-                                                    className="w-full h-1.5 bg-white/5 rounded-full relative overflow-hidden"
-                                                >
+                                                <motion.div key="prog" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                     <motion.div 
-                                                        className="h-full bg-cyan-500 shadow-[0_0_15px_#22d3ee] rounded-full"
+                                                        className="h-full bg-cyan-500"
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${uploadProgress}%` }}
-                                                        transition={{ duration: 0.2 }}
                                                     />
                                                 </motion.div>
                                             ) : (
-                                                <motion.p 
-                                                    key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                                    className={`text-[9px] uppercase tracking-[0.35em] font-mono font-bold transition-colors ${
-                                                        error ? 'text-red-500/60' : 
-                                                        uploadSuccess ? 'text-green-500/60 animate-pulse' : 
-                                                        'text-white/30 group-hover:text-white/50'
-                                                    }`}
-                                                >
-                                                    {uploading ? '' : error ? 'Access Denied' : uploadSuccess ? 'Integrity Verified' : 'Ingest External Node'}
+                                                <motion.p key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`text-[9px] uppercase tracking-[0.35em] font-mono font-bold ${error ? 'text-red-500/60' : 'text-white/30'}`}>
+                                                    {error ? error : uploadSuccess ? 'Integrity Verified' : 'Ingest External Node'}
                                                 </motion.p>
                                             )}
                                         </AnimatePresence>
@@ -316,7 +282,6 @@ const CourseGrid: React.FC<CourseGridProps> = ({ activeFilter, onModuleClick, us
                             initial={{ opacity: 0, scale: 0.8, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                            transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
                             className="h-full"
                         >
                             <CourseModule

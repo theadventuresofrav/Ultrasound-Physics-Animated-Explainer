@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, Modality } from '@google/genai';
@@ -14,7 +13,8 @@ interface ModuleIntroSequenceProps {
     onComplete: () => void;
 }
 
-const MODULE_INTRO_CACHE_PREFIX = 'echoMastersModuleIntroCache_v1';
+// Updated version from v2 to v3 to force regeneration of intro audio
+const MODULE_INTRO_CACHE_PREFIX = 'echoMastersModuleIntroCache_v3';
 
 const DataCloud = () => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -88,7 +88,8 @@ const ModuleIntroSequence: React.FC<ModuleIntroSequenceProps> = ({ moduleId, onC
     useEffect(() => {
         const narrateIntro = async () => {
             const cacheKey = `${MODULE_INTRO_CACHE_PREFIX}_${moduleId}`;
-            const fullText = `Mission Objective: ${introData.title}. ${introData.lines.join(' ')}`;
+            // MODIFIED: Instruct TTS model to speak naturally.
+            const fullText = `Narrate this intro naturally without calling out titles or bullet markers: Mission Objective: ${introData.title}. ${introData.lines.join(' ')}`;
 
             const playAudio = async (base64Audio: string) => {
                 if (!audioContextRef.current) {

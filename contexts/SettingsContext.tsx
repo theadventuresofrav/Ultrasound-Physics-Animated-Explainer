@@ -1,25 +1,31 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 
-const SETTINGS_STORAGE_KEY = 'echoMastersSettings_v5';
+const SETTINGS_STORAGE_KEY = 'echoMastersSettings_v6';
 
 interface Settings {
     animationsEnabled: boolean;
     soundEnabled: boolean;
+    musicEnabled: boolean;
     volume: number; // SFX volume
+    musicVolume: number; // Music volume
 }
 
 const defaultSettings: Settings = {
     animationsEnabled: true,
     soundEnabled: true,
+    musicEnabled: true,
     volume: 0.5,
+    musicVolume: 0.2,
 };
 
 interface SettingsContextType {
     settings: Settings;
     setAnimationsEnabled: (enabled: boolean) => void;
     setSoundEnabled: (enabled: boolean) => void;
+    setMusicEnabled: (enabled: boolean) => void;
     setVolume: (volume: number) => void;
+    setMusicVolume: (volume: number) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -64,12 +70,20 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         setSettings(prev => ({ ...prev, soundEnabled: enabled }));
     };
 
+    const setMusicEnabled = (enabled: boolean) => {
+        setSettings(prev => ({ ...prev, musicEnabled: enabled }));
+    };
+
     const setVolume = (volume: number) => {
         setSettings(prev => ({ ...prev, volume }));
     };
 
+    const setMusicVolume = (volume: number) => {
+        setSettings(prev => ({ ...prev, musicVolume: volume }));
+    };
+
     return (
-        <SettingsContext.Provider value={{ settings, setAnimationsEnabled, setSoundEnabled, setVolume }}>
+        <SettingsContext.Provider value={{ settings, setAnimationsEnabled, setSoundEnabled, setMusicEnabled, setVolume, setMusicVolume }}>
             {children}
         </SettingsContext.Provider>
     );

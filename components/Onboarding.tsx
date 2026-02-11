@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, Modality } from '@google/genai';
-import { decode, decodeAudioData } from '../utils/audio';
 import { useUser } from '../contexts/UserContext';
+import { useSound } from '../contexts/SoundContext';
 
 interface OnboardingProps {
     onComplete: () => void;
@@ -37,10 +36,8 @@ const ONBOARDING_STEPS = [
     }
 ];
 
-// Global AudioContext and source ref to manage playback
-let audioContext: AudioContext | null = null;
-let currentSource: AudioBufferSourceNode | null = null;
-const NARRATION_CACHE_KEY_PREFIX = 'echoMastersOnboardingCache_v6';
+// Updated to v8 to force regeneration of onboarding narrations
+const NARRATION_CACHE_KEY_PREFIX = 'echoMastersOnboardingCache_v8';
 
 const SpeakerIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
@@ -65,11 +62,6 @@ const RotatingRings = () => (
             animate={{ rotate: -360 }}
             transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
         />
-        <motion.div 
-            className="absolute w-[600px] h-[600px] border-2 border-white/5 rounded-full"
-            animate={{ scale: [1, 1.02, 1], opacity: [0.05, 0.1, 0.05] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        />
     </div>
 );
 
@@ -79,7 +71,7 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
     useEffect(() => {
         setDisplayedText('');
         let i = 0;
-        const speed = 25; // ms per char
+        const speed = 25; 
         const timer = setInterval(() => {
             if (i < text.length) {
                 setDisplayedText(prev => prev + text.charAt(i));
@@ -102,29 +94,21 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     const [step, setStep] = useState(0);
     const [isNarrating, setIsNarrating] = useState(true);
-    const [isLoadingNarration, setIsLoadingNarration] = useState(true);
+    const [isLoadingNarration, setIsLoadingNarration] = useState(false);
     const [narrationError, setNarrationError] = useState<string | null>(null);
     const { isQuotaExhausted, handleApiError } = useUser();
+    const { playBriefing, stopBriefing, isBriefingActive } = useSound();
 
     const originalThemeRef = useRef(document.documentElement.getAttribute('data-theme') || 'Classic');
 
-    const stopNarration = () => {
-        if (currentSource) {
-            currentSource.stop();
-            currentSource.onended = null;
-        }
-        currentSource = null;
-        setIsLoadingNarration(false);
-    };
-
     const handleFinish = () => {
-        stopNarration();
+        stopBriefing();
         document.documentElement.setAttribute('data-theme', originalThemeRef.current);
         onComplete();
     };
 
     const handleNext = () => {
-        stopNarration();
+        stopBriefing();
         if (step < ONBOARDING_STEPS.length - 1) {
             setStep(s => s + 1);
         } else {
@@ -133,7 +117,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     };
     
     const handleBack = () => {
-        stopNarration();
+        stopBriefing();
         if (step > 0) {
             setStep(s => s - 1);
         }
@@ -149,48 +133,24 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
     useEffect(() => {
         if (!isNarrating) {
-            stopNarration();
+            stopBriefing();
             return;
         }
 
         const narrateStep = async () => {
             const currentStepContent = ONBOARDING_STEPS[step];
-            const textToNarrate = `${currentStepContent.title}. ${currentStepContent.description}`;
+            // MODIFIED: Instructing TTS to speak naturally without metadata announcement.
+            const textToNarrate = `Narrate this naturally without calling out step numbers: ${currentStepContent.title}. ${currentStepContent.description}`;
             const cacheKey = `${NARRATION_CACHE_KEY_PREFIX}_${step}`;
 
-            const playAudio = async (base64Audio: string) => {
-                try {
-                    if (!audioContext || audioContext.state === 'closed') {
-                        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-                    }
-                    if (audioContext.state === 'suspended') await audioContext.resume();
-                    if (currentSource) {
-                        currentSource.stop();
-                        currentSource.onended = null;
-                    }
-                    const audioBuffer = await decodeAudioData(decode(base64Audio), audioContext, 24000, 1);
-                    const source = audioContext.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(audioContext.destination);
-                    source.start();
-                    currentSource = source;
-                    setIsLoadingNarration(false);
-                    
-                    source.onended = () => { 
-                        if (currentSource === source) {
-                            currentSource = null;
-                            autoAdvance(); 
-                        } 
-                    };
-                } catch(e) { setIsLoadingNarration(false); }
-            };
-            
             setIsLoadingNarration(true);
             setNarrationError(null);
 
             const cachedAudio = localStorage.getItem(cacheKey);
             if (cachedAudio) {
-                await playAudio(cachedAudio);
+                await playBriefing(cachedAudio);
+                autoAdvance();
+                setIsLoadingNarration(false);
                 return;
             }
 
@@ -214,12 +174,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
                 if (base64Audio) {
                     try { localStorage.setItem(cacheKey, base64Audio); } catch (e) {}
-                    await playAudio(base64Audio);
-                } else { throw new Error("No data"); }
+                    await playBriefing(base64Audio);
+                    autoAdvance();
+                }
             } catch (err: any) { 
                  handleApiError(err);
-                 setNarrationError("Briefing Unavailble");
-                 setIsLoadingNarration(false); 
+                 setNarrationError("Briefing Unavailable");
+            } finally {
+                setIsLoadingNarration(false);
             }
         };
 
@@ -227,7 +189,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     }, [step, isNarrating, isQuotaExhausted, handleApiError]);
     
     useEffect(() => () => {
-        stopNarration();
+        stopBriefing();
         document.documentElement.setAttribute('data-theme', originalThemeRef.current);
     }, []);
 
@@ -238,7 +200,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black z-[250] flex items-center justify-center p-4 overflow-hidden"
         >
-            {/* Background Atmosphere */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-800 via-black to-black opacity-90" />
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 brightness-100 contrast-150" />
             
@@ -249,11 +210,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="bg-black/30 backdrop-blur-2xl border border-[var(--gold)]/20 rounded-[2.5rem] p-8 sm:p-12 w-full max-w-5xl min-h-[650px] flex flex-col items-center justify-between text-center relative overflow-hidden shadow-[0_0_120px_rgba(212,175,55,0.08)]"
             >
-                {/* Holographic Background Elements */}
                 <RotatingRings />
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent opacity-40 shadow-[0_0_30px_var(--gold)]" />
                 
-                {/* Header Actions */}
                 <div className="w-full flex justify-between items-center relative z-20">
                      <div className="flex items-center gap-2">
                          <button 
@@ -279,7 +238,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                      <button onClick={handleFinish} className="text-xs font-mono text-white/40 hover:text-[var(--gold)] transition-colors uppercase tracking-widest border-b border-transparent hover:border-[var(--gold)] pb-0.5">Skip Initialization</button>
                 </div>
                 
-                {/* Main Content Area */}
                 <div className="flex-grow flex flex-col items-center justify-center relative z-10 w-full py-8">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -309,9 +267,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     </AnimatePresence>
                 </div>
 
-                {/* Footer Controls */}
                 <div className="w-full flex flex-col items-center gap-10 relative z-20">
-                    {/* Progress Indicator */}
                     <div className="flex gap-4">
                         {ONBOARDING_STEPS.map((_, i) => (
                             <div 

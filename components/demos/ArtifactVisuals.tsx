@@ -25,7 +25,8 @@ export const PropagationArtifactsVisual: React.FC = () => {
                     <>
                         <div className="absolute h-1 w-full bg-white/50 top-[30%]" />
                         <div className="absolute h-1 w-full bg-white/50 top-[60%]" />
-                        <div key={animationKey} className="absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-400 rounded-full" style={{ '--reflector1-pos': '30%', '--reflector2-pos': '60%', animation: `reverberation-bounce 3s ease-in-out forwards` }} />
+                        {/* Fix: Cast style to any to allow CSS custom properties which are not in the default React.CSSProperties type */}
+                        <div key={animationKey} className="absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-400 rounded-full" style={{ '--reflector1-pos': '30%', '--reflector2-pos': '60%', animation: `reverberation-bounce 3s ease-in-out forwards` } as any} />
                         <div className="absolute right-4 top-[60%] h-1 w-1/4 bg-red-500 opacity-70" />
                         <div className="absolute right-4 top-[90%] h-1 w-1/4 bg-red-500 opacity-40" />
                     </>

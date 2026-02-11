@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { UserProfile, DemoId, AIFlashcard, SRSCard, Priority, StudyTask, AIStudyPath, Theme, SystemOverrides, PodcastEpisode, UserResource, SimulationMedium, VaultedMnemonic, DailyInsight } from '../types';
 import { ACHIEVEMENTS } from '../achievements';
@@ -7,6 +6,7 @@ import { useNotification } from './NotificationContext';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { getModuleIntro } from '../data/moduleIntros';
 import { supabase } from '../lib/supabaseClient';
+import { useMutation } from "convex/react";
 
 const USER_PROFILE_STORAGE_KEY = 'echoMastersUserProfile_v4';
 const MODULE_INTRO_CACHE_PREFIX = 'echoMastersModuleIntroCache_v1';
@@ -36,7 +36,10 @@ const defaultProfile: UserProfile = {
     mnemonicVault: [],
     dailyInsight: null,
     currentExamState: null,
-    cachedExamReport: null
+    cachedExamReport: null,
+    echoCredits: 250,
+    streak: 1,
+    lastLoginDate: Date.now()
 };
 
 interface UserContextType {
@@ -72,7 +75,9 @@ interface UserContextType {
     updatePodcasts: (podcasts: PodcastEpisode[]) => void;
     updateFlashcardOverrides: (overrides: Partial<AIFlashcard>[]) => void;
     updateSystemLogo: (logo: string | undefined) => void;
+    updateThemeMusic: (musicKey: string | undefined) => void;
     updateSimulationMedia: (media: SimulationMedium[]) => void;
+    addEchoCredits: (amount: number) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -86,14 +91,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const syncInitiated = useRef(false);
     const guestIdRef = useRef<string | null>(localStorage.getItem(GUEST_ID_KEY));
 
+    // Optional Convex mutation for user profile sync (Requires 'convex/users' to exist)
+    // const syncConvexProfile = useMutation("users:syncProfile");
+
     const handleApiError = useCallback((err: any) => {
         const errorString = JSON.stringify(err);
         if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-            console.warn("[Uplink Throttled] Gemini API Quota reached. Halting background streams.");
             setIsQuotaExhausted(true);
             setTimeout(() => setIsQuotaExhausted(false), 3 * 60 * 1000);
-        } else {
-            console.error("API Error:", err);
         }
     }, []);
 
@@ -105,6 +110,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         const initializeData = async () => {
+            let profileData: UserProfile;
+
             try {
                 const { data, error } = await supabase
                     .from('profiles')
@@ -113,20 +120,28 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     .single();
 
                 if (data && !error) {
-                    setUserProfile({ ...defaultProfile, ...data.data });
-                    return;
+                    profileData = { ...defaultProfile, ...data.data };
+                } else {
+                    const storedProfile = localStorage.getItem(USER_PROFILE_STORAGE_KEY);
+                    profileData = storedProfile ? JSON.parse(storedProfile) : defaultProfile;
                 }
             } catch (err) {
-                console.warn("Supabase Sync Unavailable.");
+                const storedProfile = localStorage.getItem(USER_PROFILE_STORAGE_KEY);
+                profileData = storedProfile ? JSON.parse(storedProfile) : defaultProfile;
             }
 
-            const storedProfile = localStorage.getItem(USER_PROFILE_STORAGE_KEY);
-            if (storedProfile) {
-                const profile = JSON.parse(storedProfile);
-                setUserProfile({ ...defaultProfile, ...profile });
-            } else {
-                setUserProfile(defaultProfile);
+            const now = Date.now();
+            const lastLogin = profileData.lastLoginDate;
+            if (lastLogin) {
+                const diffDays = Math.floor((now - lastLogin) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) {
+                    profileData.streak += 1;
+                } else if (diffDays > 1) {
+                    profileData.streak = 1;
+                }
             }
+            profileData.lastLoginDate = now;
+            setUserProfile(profileData);
         };
 
         initializeData();
@@ -134,12 +149,24 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         if (userProfile && guestIdRef.current) {
-            localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(userProfile));
+            try {
+                localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(userProfile));
+            } catch (e) {}
+
             const syncToCloud = async () => {
                 try {
                     await supabase
                         .from('profiles')
-                        .upsert({ id: guestIdRef.current, data: userProfile, updated_at: new Date().toISOString() });
+                        .upsert({ 
+                            id: guestIdRef.current, 
+                            data: userProfile, 
+                            updated_at: new Date().toISOString() 
+                        });
+                    
+                    // Preparation for Convex sync
+                    // if (syncConvexProfile) {
+                    //   await syncConvexProfile({ userId: guestIdRef.current, data: userProfile });
+                    // }
                 } catch (e) {}
             };
             syncToCloud();
@@ -150,7 +177,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (syncInitiated.current || !process.env.API_KEY || isQuotaExhausted) return;
         syncInitiated.current = true;
         setIsSyncing(true);
-        setSyncProgress(0);
 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
         
@@ -174,18 +200,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         for (let i = 0; i < targets.length; i++) {
             if (isQuotaExhausted) break;
-
             const moduleId = targets[i];
             const introData = getModuleIntro(moduleId);
             const cacheKey = `${MODULE_INTRO_CACHE_PREFIX}_${moduleId}`;
             
-            setSyncProgress(Math.round(((i) / targets.length) * 100));
-
             if (!localStorage.getItem(cacheKey)) {
                 try {
                     const fullText = `Mission Objective: ${introData.title}. ${introData.lines.join(' ')}`;
                     const response = await ai.models.generateContent({
-                        model: "gemini-2.5-flash-preview-tts",
+                        model: "gemini-3-flash-preview",
                         contents: [{ parts: [{ text: fullText }] }],
                         config: {
                             responseModalities: [Modality.AUDIO],
@@ -195,7 +218,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
                     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
                     if (base64Audio) {
-                        localStorage.setItem(cacheKey, base64Audio);
+                        try { localStorage.setItem(cacheKey, base64Audio); } catch(e) {}
                     }
                     await new Promise(r => setTimeout(r, 15000));
                 } catch (err: any) {
@@ -205,8 +228,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
         }
 
-        setSyncProgress(100);
-        setTimeout(() => setIsSyncing(false), 2000);
+        setIsSyncing(false);
     }, [isQuotaExhausted, handleApiError]);
 
     useEffect(() => {
@@ -215,6 +237,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return () => clearTimeout(timer);
         }
     }, [userProfile, runPregenerationSync]);
+
+    const addEchoCredits = useCallback((amount: number) => {
+        setUserProfile(prev => prev ? { ...prev, echoCredits: (prev.echoCredits || 0) + amount } : null);
+    }, []);
 
     const updateExamState = useCallback((currentExamState: any) => {
         setUserProfile(prev => prev ? { ...prev, currentExamState } : null);
@@ -227,7 +253,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const markModuleAsCompleted = useCallback((moduleId: DemoId) => {
         setUserProfile(prev => {
             if (!prev || prev.completedModules.includes(moduleId)) return prev;
-            return { ...prev, completedModules: [...prev.completedModules, moduleId] };
+            return { 
+                ...prev, 
+                completedModules: [...prev.completedModules, moduleId],
+                echoCredits: (prev.echoCredits || 0) + 100 
+            };
         });
     }, []);
 
@@ -237,7 +267,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserProfile(prev => {
             if (!prev || prev.achievements.includes(achievementId)) return prev;
             addNotification(achievement);
-            return { ...prev, achievements: [...prev.achievements, achievementId] };
+            return { 
+                ...prev, 
+                achievements: [...prev.achievements, achievementId],
+                echoCredits: (prev.echoCredits || 0) + 50
+            };
         });
     }, [addNotification]);
     
@@ -245,7 +279,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserProfile(prev => {
             if (!prev) return prev;
             const currentBest = prev.quizScores.spi ?? -1;
-            if (score > currentBest) return { ...prev, quizScores: { ...prev.quizScores, spi: score } };
+            const creditAward = score > currentBest ? Math.floor(score * 2) : 0;
+            if (score > currentBest) return { ...prev, echoCredits: (prev.echoCredits || 0) + creditAward, quizScores: { ...prev.quizScores, spi: score } };
             return prev;
         });
     }, []);
@@ -254,8 +289,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserProfile(prev => {
             if (!prev) return prev;
             const currentBest = prev.quizScores.spiMockExam ?? -1;
+            const creditAward = score > currentBest ? Math.floor(score * 5) : 0;
             if (score > currentBest) {
-                 const newProfile = { ...prev, quizScores: { ...prev.quizScores, spiMockExam: score } };
+                 const newProfile = { 
+                    ...prev, 
+                    echoCredits: (prev.echoCredits || 0) + creditAward,
+                    quizScores: { ...prev.quizScores, spiMockExam: score } 
+                };
                 if (score >= 90 && !newProfile.achievements.includes('exam_master')) {
                     const achievement = ACHIEVEMENTS.find(a => a.id === 'exam_master');
                     if (achievement) { newProfile.achievements.push('exam_master'); addNotification(achievement); }
@@ -269,7 +309,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const resetProgress = useCallback(async () => {
         if (window.confirm("Perform core system reset? This will also wipe your cloud backup.")) {
             if (guestIdRef.current) {
-                await supabase.from('profiles').delete().eq('id', guestIdRef.current);
+                try { await supabase.from('profiles').delete().eq('id', guestIdRef.current); } catch(e) {}
             }
             setUserProfile(prev => ({
                 ...defaultProfile,
@@ -303,32 +343,45 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateCardPerformance = useCallback((deckId: string, cardId: string, isCorrect: boolean) => {
         const SRS_INTERVALS = [10 * 60 * 1000, 24 * 60 * 60 * 1000, 3 * 24 * 60 * 60 * 1000, 7 * 24 * 60 * 60 * 1000, 14 * 24 * 60 * 60 * 1000, 30 * 24 * 60 * 60 * 1000];
-        const MAX_LEVEL = 5;
         setUserProfile(prev => {
             if (!prev || !prev.flashcardDecks[deckId]) return prev;
             const now = Date.now();
+            let creditBonus = 0;
             const updatedCards = prev.flashcardDecks[deckId].map(card => {
                 if (card.id === cardId) {
-                    let newLevel = isCorrect ? Math.min(MAX_LEVEL, card.level + 1) : 0;
-                    const nextReviewTime = now + (SRS_INTERVALS[newLevel] || SRS_INTERVALS[MAX_LEVEL]);
+                    let newLevel = isCorrect ? Math.min(5, card.level + 1) : 0;
+                    if (isCorrect && newLevel > card.level) creditBonus = 5;
+                    const nextReviewTime = now + (SRS_INTERVALS[newLevel] || SRS_INTERVALS[5]);
                     return { ...card, level: newLevel, lastReviewed: now, nextReview: nextReviewTime };
                 }
                 return card;
             });
-            return { ...prev, flashcardDecks: { ...prev.flashcardDecks, [deckId]: updatedCards } };
+            return { ...prev, echoCredits: (prev.echoCredits || 0) + creditBonus, flashcardDecks: { ...prev.flashcardDecks, [deckId]: updatedCards } };
         });
     }, []);
 
     const addStudyTask = useCallback((text: string, priority: Priority) => {
         setUserProfile(prev => {
             if (!prev) return prev;
-            const newTask: StudyTask = { id: Math.random().toString(36).substr(2, 9), text, isCompleted: false, priority };
+            const reward = priority === 'High' ? 25 : priority === 'Medium' ? 15 : 10;
+            const newTask: StudyTask = { id: Math.random().toString(36).substr(2, 9), text, isCompleted: false, priority, reward };
             return { ...prev, studyTasks: [...(prev.studyTasks || []), newTask] };
         });
     }, []);
 
     const toggleStudyTask = useCallback((taskId: string) => {
-        setUserProfile(prev => prev ? { ...prev, studyTasks: (prev.studyTasks || []).map(task => task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task) } : null);
+        setUserProfile(prev => {
+            if (!prev) return null;
+            let earned = 0;
+            const tasks = (prev.studyTasks || []).map(task => {
+                if (task.id === taskId) {
+                    if (!task.isCompleted) earned = task.reward || 10;
+                    return { ...task, isCompleted: !task.isCompleted };
+                }
+                return task;
+            });
+            return { ...prev, echoCredits: (prev.echoCredits || 0) + earned, studyTasks: tasks };
+        });
     }, []);
 
     const deleteStudyTask = useCallback((taskId: string) => {
@@ -395,13 +448,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserProfile(prev => prev ? { ...prev, systemOverrides: { ...(prev.systemOverrides || {}), systemLogo } } : null);
     }, []);
 
+    const updateThemeMusic = useCallback((themeMusicKey: string | undefined) => {
+        setUserProfile(prev => prev ? { ...prev, systemOverrides: { ...(prev.systemOverrides || {}), themeMusicKey } } : null);
+    }, []);
+
     const updateSimulationMedia = useCallback((customMedia: SimulationMedium[]) => {
         setUserProfile(prev => prev ? { ...prev, systemOverrides: { ...(prev.systemOverrides || {}), customMedia } } : null);
     }, []);
 
     return (
         <UserContext.Provider value={{ 
-            userProfile, isSyncing, syncProgress, isQuotaExhausted, handleApiError, markModuleAsCompleted, awardAchievement, setSpiQuizScore, setSpiMockExamScore, resetProgress, addFlashcardDeck, updateCardPerformance, addStudyTask, toggleStudyTask, deleteStudyTask, addUserResource, deleteUserResource, updateNote, setUserName, setStudyPath, setLastActiveModule, markOnboardingAsCompleted, setTheme, vaultMnemonic, deleteMnemonic, updateDailyInsight, updateExamState, updateCachedReport, toggleAdmin, updatePodcasts, updateFlashcardOverrides, updateSystemLogo, updateSimulationMedia
+            userProfile, isSyncing, syncProgress: 0, isQuotaExhausted, handleApiError, markModuleAsCompleted, awardAchievement, setSpiQuizScore, setSpiMockExamScore, resetProgress, addFlashcardDeck, updateCardPerformance, addStudyTask, toggleStudyTask, deleteStudyTask, addUserResource, deleteUserResource, updateNote, setUserName, setStudyPath, setLastActiveModule, markOnboardingAsCompleted, setTheme, vaultMnemonic, deleteMnemonic, updateDailyInsight, updateExamState, updateCachedReport, toggleAdmin, updatePodcasts, updateFlashcardOverrides, updateSystemLogo, updateThemeMusic, updateSimulationMedia, addEchoCredits
         }}>
             {children}
         </UserContext.Provider>

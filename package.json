@@ -13,7 +13,8 @@
     "react-dom": "^19.2.0",
     "react": "^19.2.0",
     "framer-motion": "^12.23.22",
-    "@supabase/supabase-js": "2.39.3"
+    "@supabase/supabase-js": "2.39.3",
+    "convex": "^1.31.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

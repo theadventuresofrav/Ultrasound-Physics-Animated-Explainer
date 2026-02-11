@@ -67,8 +67,9 @@ export interface PodcastEpisode {
 
 export interface SystemOverrides {
     podcasts?: PodcastEpisode[];
-    flashcards?: Partial<AIFlashcard>[]; // Map by index or ID to override defaults
+    flashcards?: Partial<AIFlashcard>[]; 
     systemLogo?: string;
+    themeMusicKey?: string;
     customMedia?: SimulationMedium[];
 }
 
@@ -79,6 +80,7 @@ export interface StudyTask {
   text: string;
   isCompleted: boolean;
   priority: Priority;
+  reward?: number;
 }
 
 export interface UserProfile {
@@ -107,6 +109,10 @@ export interface UserProfile {
   dailyInsight: DailyInsight | null;
   currentExamState: any;
   cachedExamReport: any;
+  // Gamification properties
+  echoCredits: number;
+  streak: number;
+  lastLoginDate: number | null;
 }
 
 export interface AIQuizQuestion {

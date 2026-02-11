@@ -36,17 +36,24 @@ const TaskItem: React.FC<{ task: StudyTask }> = ({ task }) => {
                 }`}
             >
                 {task.isCompleted && (
-                    <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                    <motion.svg 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4"
+                    >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                    </motion.svg>
                 )}
             </button>
 
             <div className="flex-grow min-w-0 mr-2">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center justify-between mb-1">
                     <span className={`text-[9px] font-mono font-bold uppercase tracking-wider ${config.color}`}>
                         {config.label}
                     </span>
+                    {!task.isCompleted && (
+                        <span className="text-[8px] font-black text-yellow-400/60 uppercase">+{task.reward} EC</span>
+                    )}
                     {task.isCompleted && <span className="text-[9px] text-green-500 font-mono font-bold uppercase tracking-wider">/ EXECUTED</span>}
                 </div>
                 <p className={`text-xs sm:text-sm font-medium leading-snug transition-all ${task.isCompleted ? 'text-white/30 line-through decoration-white/20' : 'text-white/90'}`}>

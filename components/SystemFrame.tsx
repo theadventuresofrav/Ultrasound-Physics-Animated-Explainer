@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 const Corner: React.FC<{ className?: string, rotate?: number, delay?: number }> = ({ className, rotate = 0, delay = 0 }) => (
     <motion.svg 
         viewBox="0 0 40 40" 
-        className={`absolute w-8 h-8 sm:w-16 sm:h-16 text-[var(--gold)] transition-colors duration-500 opacity-60 ${className}`}
+        className={`absolute w-6 h-6 sm:w-16 sm:h-16 text-[var(--gold)] transition-colors duration-500 opacity-60 ${className}`}
         style={{ rotate: rotate }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 0.6, scale: 1 }}
@@ -19,7 +19,6 @@ const Corner: React.FC<{ className?: string, rotate?: number, delay?: number }> 
 
 const SystemFrame: React.FC = () => {
     const { userProfile } = useUser();
-    const isNeon = userProfile?.theme === 'Neon';
     const [telemetry, setTelemetry] = useState({ x: 0, y: 0, cpu: 42 });
 
     useEffect(() => {
@@ -34,12 +33,12 @@ const SystemFrame: React.FC = () => {
     }, []);
 
     return (
-        <div className="fixed inset-0 z-[60] pointer-events-none flex flex-col justify-between select-none p-3 sm:p-6">
+        <div className="fixed inset-0 z-[60] pointer-events-none flex flex-col justify-between select-none p-1.5 sm:p-6">
             {/* Global Scanline Layer */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)] bg-[size:100%_4px] opacity-10" />
 
-            <div className="w-full h-10 relative">
-                <div className="absolute top-0 left-12 right-12 h-[1px] bg-white/10 overflow-hidden">
+            <div className="w-full h-8 sm:h-10 relative">
+                <div className="absolute top-0 left-6 right-6 h-[1px] bg-white/10 overflow-hidden">
                     <motion.div 
                         className="w-full h-full bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent opacity-50"
                         initial={{ x: '-100%' }}
@@ -55,46 +54,19 @@ const SystemFrame: React.FC = () => {
                     initial={{ y: -30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.5, type: "spring", stiffness: 100 }}
-                    className="absolute -top-[1px] left-1/2 -translate-x-1/2 bg-[#050505]/95 backdrop-blur-2xl px-6 py-1 text-[9px] font-mono text-[var(--gold)]/80 tracking-[0.4em] uppercase border border-t-0 border-white/10 rounded-b-2xl flex items-center gap-6 shadow-2xl shadow-[var(--gold)]/5"
+                    className="absolute -top-[1px] left-1/2 -translate-x-1/2 bg-[#050505]/95 backdrop-blur-2xl px-4 sm:px-6 py-0.5 sm:py-1 text-[7px] sm:text-[9px] font-mono text-[var(--gold)]/80 tracking-[0.3em] sm:tracking-[0.4em] uppercase border border-t-0 border-white/10 rounded-b-xl sm:rounded-b-2xl flex items-center gap-3 sm:gap-6 shadow-2xl"
                 >
                     <div className="flex items-center gap-2">
                         <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
-                        <span>ECHO_OS_V5.0_CMD</span>
+                        <span className="hidden xs:inline">ECHO_OS_CMD</span>
                     </div>
                     <span className="text-white/10">/</span>
                     <span className="text-white/40">CPU: {telemetry.cpu}%</span>
-                    <span className="text-white/10">/</span>
-                    <span className="hidden md:inline">NAV_LOC: {telemetry.x}:{telemetry.y}</span>
                 </motion.div>
             </div>
 
-            <div className="flex-grow relative w-full">
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.15 }}
-                    transition={{ delay: 1, duration: 1 }}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-16"
-                >
-                    <div className="w-1 h-12 bg-gradient-to-b from-transparent via-white to-transparent" />
-                    <div className="w-0.5 h-1 bg-white" />
-                    <div className="w-0.5 h-1 bg-white" />
-                    <div className="w-1 h-12 bg-gradient-to-b from-transparent via-white to-transparent" />
-                </motion.div>
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.15 }}
-                    transition={{ delay: 1, duration: 1 }}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-16 items-end"
-                >
-                    <div className="w-1 h-12 bg-gradient-to-b from-transparent via-white to-transparent" />
-                    <div className="w-0.5 h-1 bg-white" />
-                    <div className="w-0.5 h-1 bg-white" />
-                    <div className="w-1 h-12 bg-gradient-to-b from-transparent via-white to-transparent" />
-                </motion.div>
-            </div>
-
-            <div className="w-full h-10 relative">
-                <div className="absolute bottom-0 left-12 right-12 h-[1px] bg-white/10 overflow-hidden">
+            <div className="w-full h-8 sm:h-10 relative">
+                <div className="absolute bottom-0 left-6 right-6 h-[1px] bg-white/10 overflow-hidden">
                      <motion.div 
                         className="w-full h-full bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent opacity-30"
                         initial={{ x: '100%' }}
@@ -110,23 +82,18 @@ const SystemFrame: React.FC = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1.5 }}
-                    className="absolute bottom-1 left-14 sm:left-16 text-[9px] font-mono text-white/20 tracking-[0.3em] flex items-center gap-6"
+                    className="absolute bottom-1 left-8 sm:left-16 text-[7px] sm:text-[9px] font-mono text-white/20 tracking-[0.2em] sm:tracking-[0.3em] flex items-center gap-4 sm:gap-6"
                 >
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e]" />
-                        <span className="text-white/60 font-black">KERNEL: OPTIMAL</span>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-green-500 rounded-full shadow-[0_0_5px_#22c55e]" />
+                        <span className="text-white/60 font-black">KERNEL_OK</span>
                     </div>
-                    <span className="hidden sm:inline text-white/5">|</span>
-                    <span className="hidden sm:inline">BUFFER_SYNC: NOMINAL</span>
                 </motion.div>
                 
-                <div className="absolute bottom-1 right-14 sm:right-16 flex gap-6 text-[9px] font-mono">
-                    <span className="text-white/20 uppercase tracking-widest">SIGNAL_LINK: 100%</span>
-                    <span className="text-[var(--gold)]/40 font-black">ENCRYPTION: AES_OS_PRO</span>
+                <div className="absolute bottom-1 right-8 sm:right-16 flex gap-4 text-[7px] sm:text-[9px] font-mono">
+                    <span className="text-[var(--gold)]/40 font-black">AES_PRO</span>
                 </div>
             </div>
-            
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_60%,rgba(0,0,0,0.7)_100%)] pointer-events-none" />
         </div>
     );
 };

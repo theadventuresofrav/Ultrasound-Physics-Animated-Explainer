@@ -1,9 +1,10 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../contexts/UserContext';
+import { useSound } from '../../contexts/SoundContext';
 import ControlButton from './ControlButton';
 import DemoSection from './DemoSection';
+import { TargetIcon, TrophyIcon, BrainIcon, SparklesIcon } from '../Icons';
 
 // --- Types ---
 type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
@@ -14,13 +15,13 @@ interface Question {
     value: number;
     question: string;
     options: string[];
-    answer: number; // Index of correct option
+    answer: number; 
     explanation: string;
 }
 
 interface GameData {
-    [key: string]: { // Difficulty
-        [key: string]: Question[]; // Category -> Questions
+    [key: string]: { 
+        [key: string]: Question[]; 
     };
 }
 
@@ -127,7 +128,9 @@ const GAME_DATA: GameData = {
 const CATEGORIES: Category[] = ['Basics', 'Transducers', 'Doppler', 'Artifacts', 'Safety'];
 
 const JeopardyDemo: React.FC = () => {
-    const { awardAchievement } = useUser();
+    const { awardAchievement, addEchoCredits } = useUser();
+    const { playClick, playHover, narrateText, stopBriefing, playSuccess, playError } = useSound();
+    
     const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
     const [score, setScore] = useState(0);
     const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
@@ -135,7 +138,25 @@ const JeopardyDemo: React.FC = () => {
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
 
-    // Filter questions based on selected difficulty
+    // Initial Briefing: 9-Step Brain Meal-Prep Architecture
+    const triggerBriefing = (level: Difficulty) => {
+        const briefingText = `
+            NARRATIVE ARCHITECTURE:
+            1. QUANTIFY EFFORT: I have analyzed thousands of official SPI registry questions across ${level} level constraints to save you dozens of hours of manual archive searching.
+            2. PROMISE ASSESSMENT: But clicking buttons is not enough. Your neural synchronization will be measured by your final credit tally.
+            3. STRUCTURED ROADMAP: We will sweep through five core sectors: Basics, Transducers, Doppler, Artifacts, and Safety.
+            4. DEFINE BY CONTRAST: This is not a casual trivia night; it is a high-speed diagnostic retrieval simulation.
+            5. MNEMONIC INJECTION: Remember the acronym S.P.I. - Speed, Precision, and Intelligence.
+            6. ANALOGY: Think of yourself as a pilot in a dogfight. You must recall critical physics data nodes while the pressure is mounting.
+            7. PRACTICAL WORKFLOW: Successfully extracting data here mimics the clinical environment where your physics intuition must be instantaneous.
+            8. BEHAVIORAL MINDSET: Focus on the system of elimination. Do not rise to the level of your guesses; fall to the level of your systems.
+            9. FINAL ASSESSMENT: Are you ready to initialize the grid?
+            
+            CRITICAL: JUST TALK. No headers, no labels. Continuous monologue.
+        `;
+        narrateText(briefingText, `Briefing: ${level} Challenge`);
+    };
+
     const currentQuestions = useMemo(() => {
         if (!difficulty) return null;
         return GAME_DATA[difficulty];
@@ -143,6 +164,7 @@ const JeopardyDemo: React.FC = () => {
 
     const handleQuestionClick = (q: Question) => {
         if (answeredQuestions.includes(q.id)) return;
+        playClick();
         setActiveQuestion(q);
         setSelectedOption(null);
         setIsAnswerRevealed(false);
@@ -155,8 +177,11 @@ const JeopardyDemo: React.FC = () => {
 
         const isCorrect = optionIdx === activeQuestion.answer;
         if (isCorrect) {
+            playSuccess();
             setScore(s => s + activeQuestion.value);
+            addEchoCredits(activeQuestion.value / 10); // Reward small bonus credits
         } else {
+            playError();
             setScore(s => s - activeQuestion.value);
         }
     };
@@ -167,27 +192,53 @@ const JeopardyDemo: React.FC = () => {
             setActiveQuestion(null);
         }
         
-        // Check for game completion
         if (currentQuestions && answeredQuestions.length + 1 === Object.values(currentQuestions).flat().length) {
-            // Game Over logic could go here
-            if (score > 2000) awardAchievement('jeopardy');
+            if (score > 1000) awardAchievement('jeopardy');
         }
+    };
+
+    const handleDifficultySelect = (level: Difficulty) => {
+        playClick();
+        setDifficulty(level);
+        triggerBriefing(level);
     };
 
     if (!difficulty) {
         return (
-            <DemoSection title="SPI Jeopardy Challenge" description="Test your physics knowledge in a competitive format. Select your difficulty level to begin.">
-                <div className="flex flex-col items-center justify-center py-12 gap-6">
-                    <h3 className="text-2xl font-bold text-white mb-4">Select Difficulty</h3>
-                    <div className="flex flex-wrap justify-center gap-4">
-                        {(['Beginner', 'Intermediate', 'Advanced'] as Difficulty[]).map(level => (
-                            <button
+            <DemoSection title="SPI Jeopardy Challenge" description="High-speed data retrieval simulation. Calibrate your physics intuition against the grid.">
+                <div className="flex flex-col items-center justify-center py-16 gap-8 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.05),transparent_70%)]" />
+                    
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                        className="text-center space-y-2 relative z-10"
+                    >
+                         <h3 className="text-4xl font-black text-white tracking-tighter uppercase italic">Select_Difficulty_Level</h3>
+                         <p className="text-[10px] font-mono text-white/40 tracking-[0.4em] uppercase">Uplink required to initialize grid</p>
+                    </motion.div>
+
+                    <div className="flex flex-wrap justify-center gap-6 relative z-10">
+                        {(['Beginner', 'Intermediate', 'Advanced'] as Difficulty[]).map((level, i) => (
+                            <motion.button
                                 key={level}
-                                onClick={() => setDifficulty(level)}
-                                className="px-8 py-6 rounded-2xl bg-gray-800 border-2 border-white/10 hover:border-[var(--gold)] hover:bg-gray-700 transition-all text-xl font-bold text-white w-64 shadow-lg hover:scale-105"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                onClick={() => handleDifficultySelect(level)}
+                                onMouseEnter={playHover}
+                                className="group relative w-64 p-8 rounded-[2rem] bg-white/[0.02] border border-white/10 hover:border-[var(--gold)]/40 hover:bg-white/[0.05] transition-all duration-500 shadow-2xl"
                             >
-                                {level}
-                            </button>
+                                <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-100 transition-opacity">
+                                    <TargetIcon className="w-5 h-5 text-[var(--gold)]" />
+                                </div>
+                                <h4 className="text-2xl font-black text-white group-hover:text-[var(--gold)] transition-colors mb-2 uppercase tracking-tighter">{level}</h4>
+                                <p className="text-[9px] font-mono text-white/30 uppercase tracking-widest">
+                                    {level === 'Beginner' ? 'Sector: Fundamental' : level === 'Intermediate' ? 'Sector: Tactical' : 'Sector: Elite'}
+                                </p>
+                                <div className="mt-6 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div className="h-full bg-[var(--gold)]/40" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+                                </div>
+                            </motion.button>
                         ))}
                     </div>
                 </div>
@@ -196,42 +247,83 @@ const JeopardyDemo: React.FC = () => {
     }
 
     return (
-        <DemoSection title={`SPI Jeopardy: ${difficulty}`} description="Select a category and point value. Correct answers add to your score, incorrect answers subtract.">
-            <div className="relative">
-                {/* Scoreboard */}
-                <div className="flex justify-between items-center mb-6 bg-black/40 p-4 rounded-xl border border-white/10">
-                    <button onClick={() => setDifficulty(null)} className="text-xs text-white/50 hover:text-white">← Change Difficulty</button>
-                    <div className="text-center">
-                        <p className="text-xs text-[var(--gold)] uppercase tracking-widest font-bold mb-1">Current Score</p>
-                        <p className={`text-4xl font-mono font-black ${score >= 0 ? 'text-white' : 'text-red-500'}`}>${score}</p>
+        <DemoSection title={`SPI Jeopardy: ${difficulty}`} description="Execute rapid knowledge retrieval across the five primary physics sectors.">
+            <div className="relative font-mono">
+                {/* Scoreboard / HUD */}
+                <div className="flex justify-between items-center mb-10 bg-black/60 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
+                    <button 
+                        onClick={() => { playClick(); setDifficulty(null); stopBriefing(); }} 
+                        className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black text-white/40 hover:text-white transition-all uppercase tracking-widest"
+                    >
+                        <ChevronLeftIcon className="w-3 h-3" /> [ Abort_Session ]
+                    </button>
+                    
+                    <div className="text-center relative">
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 whitespace-nowrap">
+                            <div className="w-1 h-1 bg-green-500 rounded-full animate-ping" />
+                            <span className="text-[8px] font-black text-green-500 uppercase tracking-[0.3em]">Neural_credits_Sync</span>
+                        </div>
+                        <motion.p 
+                            key={score}
+                            initial={{ scale: 1.2, color: '#fff' }}
+                            animate={{ scale: 1, color: score >= 0 ? '#fff' : '#ef4444' }}
+                            className="text-6xl font-black tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                        >
+                            {score < 0 && '-'}${Math.abs(score)}
+                        </motion.p>
                     </div>
-                    <div className="w-20"></div> {/* Spacer */}
+
+                    <div className="hidden sm:flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
+                        <div className="text-right">
+                             <p className="text-[8px] font-black text-white/30 uppercase tracking-widest">Progress</p>
+                             <p className="text-xs font-bold text-[var(--gold)]">{answeredQuestions.length} / 20</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center text-[var(--gold)]">
+                             <TrophyIcon className="w-5 h-5" />
+                        </div>
+                    </div>
                 </div>
 
-                {/* Game Board */}
-                <div className="grid grid-cols-5 gap-2 sm:gap-4 overflow-x-auto">
+                {/* Tactical Game Grid */}
+                <div className="grid grid-cols-5 gap-3 sm:gap-6">
                     {CATEGORIES.map(cat => (
-                        <div key={cat} className="space-y-2 sm:space-y-4 min-w-[80px]">
-                            {/* Category Header */}
-                            <div className="bg-[var(--gold)] text-black font-bold text-xs sm:text-sm py-3 px-1 rounded text-center uppercase tracking-tighter truncate border-b-4 border-[#b08d2f]">
-                                {cat}
+                        <div key={cat} className="space-y-4 min-w-[100px]">
+                            {/* Sector Header */}
+                            <div className="relative group/header">
+                                <div className="absolute inset-0 bg-[var(--gold)] blur-md opacity-0 group-hover/header:opacity-20 transition-opacity" />
+                                <div className="relative bg-white/[0.03] text-white border border-white/10 font-black text-[9px] sm:text-[11px] py-4 rounded-xl text-center uppercase tracking-tighter shadow-inner overflow-hidden">
+                                     <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                                     {cat}
+                                </div>
                             </div>
                             
-                            {/* Questions */}
-                            {currentQuestions && currentQuestions[cat].map(q => {
+                            {/* Question Nodes */}
+                            {currentQuestions && currentQuestions[cat].map((q, i) => {
                                 const isAnswered = answeredQuestions.includes(q.id);
                                 return (
                                     <motion.button
                                         key={q.id}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: i * 0.05 }}
                                         onClick={() => handleQuestionClick(q)}
+                                        onMouseEnter={playHover}
                                         disabled={isAnswered}
-                                        className={`w-full aspect-video sm:aspect-[4/3] rounded-lg border-2 flex items-center justify-center font-mono font-bold text-lg sm:text-2xl transition-all shadow-md ${
+                                        className={`group relative w-full aspect-[4/3] rounded-2xl border-2 flex items-center justify-center font-black text-xl sm:text-3xl transition-all duration-500 overflow-hidden ${
                                             isAnswered 
-                                                ? 'bg-gray-900 border-gray-800 text-gray-700 cursor-default' 
-                                                : 'bg-blue-900 border-blue-700 text-[var(--gold)] hover:bg-blue-800 hover:border-[var(--gold)] hover:scale-105 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]'
+                                                ? 'bg-black/60 border-white/5 text-white/5 cursor-default' 
+                                                : 'bg-black/40 border-white/10 text-[var(--gold)] hover:border-[var(--gold)] hover:bg-[var(--gold)]/10 hover:shadow-[0_0_30px_rgba(212,175,55,0.2)] hover:-translate-y-1'
                                         }`}
                                     >
-                                        {isAnswered ? '' : `$${q.value}`}
+                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_25%,rgba(255,255,255,0.02)_50%,transparent_50%,transparent_75%,rgba(255,255,255,0.02)_75%,rgba(255,255,255,0.02))] bg-[size:8px_8px]" />
+                                        <span className="relative z-10 tabular-nums">{isAnswered ? '' : `$${q.value}`}</span>
+                                        {!isAnswered && (
+                                            <motion.div 
+                                                className="absolute bottom-0 left-0 h-[2px] bg-[var(--gold)]"
+                                                initial={{ width: 0 }}
+                                                whileHover={{ width: '100%' }}
+                                            />
+                                        )}
                                     </motion.button>
                                 );
                             })}
@@ -239,70 +331,100 @@ const JeopardyDemo: React.FC = () => {
                     ))}
                 </div>
 
-                {/* Question Modal */}
+                {/* Tactical Question Interface (Modal) */}
                 <AnimatePresence>
                     {activeQuestion && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
                             <motion.div 
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="bg-[#0f0f0f] border border-[var(--gold)] rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl relative"
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
+                                className="bg-[#08080a] border-2 border-white/10 rounded-[3rem] w-full max-w-4xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] relative"
                             >
-                                {/* Modal Header */}
-                                <div className="bg-blue-900 p-6 text-center border-b border-blue-800">
-                                    <h3 className="text-[var(--gold)] font-mono text-3xl font-black">${activeQuestion.value}</h3>
+                                {/* Modal Header Area */}
+                                <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 flex items-center justify-center text-[var(--gold)]">
+                                            <BrainIcon className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-[var(--gold)] uppercase tracking-[0.4em]">Retrieval_Target</p>
+                                            <h3 className="text-3xl font-black text-white tracking-tighter uppercase italic">${activeQuestion.value}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-mono text-white/30 uppercase tracking-widest">Latency: 12ms</p>
+                                        <p className="text-[9px] font-mono text-green-500 uppercase tracking-widest animate-pulse">Syncing...</p>
+                                    </div>
                                 </div>
 
-                                {/* Question Content */}
-                                <div className="p-8">
-                                    <p className="text-xl sm:text-2xl text-white text-center font-medium mb-8 leading-relaxed">
-                                        {activeQuestion.question}
-                                    </p>
+                                {/* Question Body */}
+                                <div className="p-10 space-y-12">
+                                    <div className="relative">
+                                        <div className="absolute -left-6 top-0 bottom-0 w-1 bg-red-600 rounded-full opacity-40 shadow-[0_0_10px_red]" />
+                                        <p className="text-2xl sm:text-4xl font-black text-white leading-[1.1] tracking-tight pl-4">
+                                            {activeQuestion.question}
+                                        </p>
+                                    </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {activeQuestion.options.map((option, idx) => {
-                                            let btnClass = "bg-white/10 hover:bg-white/20 border-white/10 text-white";
+                                            let btnClass = "bg-white/[0.02] border-white/10 text-white/60 hover:border-white/40 hover:bg-white/[0.05]";
                                             
                                             if (isAnswerRevealed) {
                                                 if (idx === activeQuestion.answer) {
-                                                    btnClass = "bg-green-600 border-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]";
+                                                    btnClass = "bg-green-500/10 border-green-500 text-green-400 shadow-[0_0_30px_rgba(34,197,94,0.2)]";
                                                 } else if (idx === selectedOption) {
-                                                    btnClass = "bg-red-600 border-red-500 text-white opacity-50";
+                                                    btnClass = "bg-red-500/10 border-red-500 text-red-400 opacity-40";
                                                 } else {
-                                                    btnClass = "bg-black/20 border-transparent text-white/30";
+                                                    btnClass = "bg-black/40 border-white/5 text-white/10";
                                                 }
                                             }
 
                                             return (
                                                 <button
                                                     key={idx}
-                                                    onClick={() => handleAnswerSubmit(idx)}
+                                                    onClick={() => { playClick(); handleAnswerSubmit(idx); }}
                                                     disabled={isAnswerRevealed}
-                                                    className={`p-4 rounded-xl border-2 text-left font-semibold transition-all duration-300 text-sm sm:text-base ${btnClass}`}
+                                                    className={`p-6 rounded-2xl border-2 text-left font-black transition-all duration-500 uppercase tracking-wider text-xs sm:text-sm relative overflow-hidden group/opt ${btnClass}`}
                                                 >
-                                                    {option}
+                                                    <span className="relative z-10">{option}</span>
+                                                    {!isAnswerRevealed && (
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-[var(--gold)]/0 via-[var(--gold)]/5 to-transparent -translate-x-full group-hover/opt:translate-x-full transition-transform duration-1000" />
+                                                    )}
                                                 </button>
                                             )
                                         })}
                                     </div>
 
-                                    {/* Explanation & Next */}
-                                    {isAnswerRevealed && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="mt-8 pt-6 border-t border-white/10"
-                                        >
-                                            <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-xl mb-6">
-                                                <p className="text-blue-300 font-bold text-xs uppercase tracking-wider mb-2">Explanation</p>
-                                                <p className="text-white/90">{activeQuestion.explanation}</p>
-                                            </div>
-                                            <div className="flex justify-center">
-                                                <ControlButton onClick={handleCloseQuestion}>Continue to Board</ControlButton>
-                                            </div>
-                                        </motion.div>
-                                    )}
+                                    {/* Intelligence Analysis & Continue */}
+                                    <AnimatePresence>
+                                        {isAnswerRevealed && (
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="pt-10 border-t border-white/5 space-y-8"
+                                            >
+                                                <div className="bg-black/60 p-8 rounded-[2rem] border border-white/5 relative overflow-hidden group/feedback">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--gold)]/5 to-transparent opacity-0 group-hover/feedback:opacity-100 transition-opacity" />
+                                                    <div className="flex items-start gap-6">
+                                                        <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shrink-0">
+                                                            <SparklesIcon className="w-7 h-7 text-[var(--gold)]" />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <h5 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Neural_Analysis:</h5>
+                                                            <p className="text-lg text-white/80 font-light italic leading-relaxed">
+                                                                "{activeQuestion.explanation}"
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-center">
+                                                    <ControlButton onClick={handleCloseQuestion} className="h-16 px-16 uppercase text-[11px] font-black tracking-[0.3em]">Continue_to_Grid</ControlButton>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </motion.div>
                         </div>
@@ -312,5 +434,12 @@ const JeopardyDemo: React.FC = () => {
         </DemoSection>
     );
 };
+
+// Reused simple icons for local consistency
+const ChevronLeftIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+    </svg>
+);
 
 export default JeopardyDemo;

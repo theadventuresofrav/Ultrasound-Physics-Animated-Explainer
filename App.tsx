@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import FloatingParticles from './components/FloatingParticles';
+import LiveBackground from './components/LiveBackground';
 import SystemFrame from './components/SystemFrame';
 import LearningDashboard from './components/LearningDashboard';
 import ModuleView from './components/ModuleView';
@@ -65,8 +65,8 @@ const App: React.FC = () => {
 
   return (
     <SoundProvider> 
-      <div className="bg-[#0a0a0a] text-white min-h-screen flex flex-col relative overflow-hidden">
-        {settings.animationsEnabled && <FloatingParticles />}
+      <div className="bg-transparent text-white min-h-screen flex flex-col relative overflow-hidden">
+        {settings.animationsEnabled && <LiveBackground />}
         
         {/* Global UI Frame */}
         <SystemFrame />
@@ -78,7 +78,7 @@ const App: React.FC = () => {
             onModuleClick={handleModuleClick}
         />
 
-        <main className="flex-grow relative z-10">
+        <main className="flex-grow relative z-10 bg-transparent">
             <AnimatePresence mode="wait">
                 {activeModuleId ? (
                     <motion.div
@@ -87,7 +87,7 @@ const App: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="h-full"
+                        className="h-full bg-transparent"
                     >
                         <ModuleView 
                             moduleId={activeModuleId} 
@@ -102,7 +102,7 @@ const App: React.FC = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="h-full"
+                        className="h-full bg-transparent"
                     >
                         <LearningDashboard 
                             onModuleClick={handleModuleClick} 

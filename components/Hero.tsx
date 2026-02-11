@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import EchoBotMascot from './EchoBotMascot';
 import { useUser } from '../contexts/UserContext';
 import { GoogleGenAI } from '@google/genai';
+import NarrativeWrapper from './NarrativeWrapper';
 
 interface HeroProps {
     userProfile: UserProfile | null;
@@ -16,14 +17,22 @@ interface HeroProps {
 }
 
 const StatWidget: React.FC<{ label: string, value: string | number, subtext?: string, icon: React.ReactNode, colorClass?: string }> = ({ label, value, subtext, icon, colorClass = "text-[var(--gold)]" }) => (
-    <div className="bg-white/[0.03] backdrop-blur-md border border-white/10 rounded-2xl p-5 flex flex-col justify-between h-full min-w-[140px] relative overflow-hidden group hover:border-white/20 transition-all duration-300 hover:shadow-[0_4px_20px_-10px_rgba(0,0,0,0.5)] hover:-translate-y-1">
-        <div className={`absolute top-3 right-3 opacity-20 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 group-hover:rotate-12 ${colorClass}`}>{icon}</div>
-        <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest mb-3 border-b border-white/5 pb-2 w-fit">{label}</p>
-        <div>
-            <p className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tighter shadow-black drop-shadow-lg">{value}</p>
-            {subtext && <p className={`text-[9px] mt-1.5 font-bold uppercase tracking-wide opacity-80 ${colorClass}`}>{subtext}</p>}
+    <div className="bg-white/[0.03] backdrop-blur-md border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-full min-w-[120px] relative overflow-hidden group">
+        <div className={`absolute top-2 right-2 opacity-10 group-hover:opacity-100 transition-all ${colorClass}`}>{icon}</div>
+        <p className="text-[8px] sm:text-[10px] font-mono text-white/40 uppercase tracking-widest mb-2 sm:mb-3 border-b border-white/5 pb-2 w-fit">{label}</p>
+        <div className="relative z-10">
+            <AnimatePresence mode="wait">
+                <motion.p 
+                    key={value}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-2xl sm:text-4xl font-black text-white leading-none tracking-tighter"
+                >
+                    {value}
+                </motion.p>
+            </AnimatePresence>
+            {subtext && <p className={`text-[7px] sm:text-[9px] mt-1 sm:mt-1.5 font-bold uppercase tracking-wide opacity-80 ${colorClass}`}>{subtext}</p>}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.02] to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
     </div>
 );
 
@@ -34,28 +43,23 @@ const Hero: React.FC<HeroProps> = ({ userProfile, onGeneratePathClick, studyPath
     const completedCount = userProfile?.completedModules.length ?? 0;
     const totalModules = COURSE_MODULES.length;
     const progress = totalModules > 0 ? (completedCount / totalModules) * 100 : 0;
-    const achievementsCount = userProfile?.achievements.length ?? 0;
+    const credits = userProfile?.echoCredits || 0;
+    const streak = userProfile?.streak || 0;
     
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
     const pilotName = userProfile?.name?.split(' ')[0] || 'Cadet';
 
-    // Daily Insight Persistence Logic (24 hours)
     useEffect(() => {
         const checkInsight = async () => {
             const now = Date.now();
             const lastInsight = userProfile?.dailyInsight;
             const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-
-            // If no insight exists OR the existing one is older than 24 hours, generate a new one
             if (!lastInsight || (now - lastInsight.timestamp) > TWENTY_FOUR_HOURS) {
                 generateNewInsight();
             }
         };
-
-        if (userProfile) {
-            checkInsight();
-        }
+        if (userProfile) checkInsight();
     }, [userProfile?.dailyInsight?.timestamp, userProfile === null]);
 
     const generateNewInsight = async () => {
@@ -63,135 +67,82 @@ const Hero: React.FC<HeroProps> = ({ userProfile, onGeneratePathClick, studyPath
         setIsRefreshingInsight(true);
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-            const prompt = `Act as "Harvey", an elite ultrasound physics mentor. 
-            Provide a short (max 2 sentences) tactical briefing for a student preparing for the SPI exam. 
-            Focus on one critical physics concept (e.g. Nyquist limit, damping, harmonics) and why it matters clinically. 
-            Tone: Intense, authoritative, encouraging. Plain text only. No markdown.`;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: prompt,
-            });
-
+            const prompt = `Act as "Harvey", an elite ultrasound physics mentor. Short briefing for exam prep. Max 2 sentences. Intense, authoritative.`;
+            const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
             updateDailyInsight(response.text);
-        } catch (e) {
-            console.error("Daily insight generation failed", e);
-        } finally {
-            setIsRefreshingInsight(false);
-        }
+        } catch (e) { console.error(e); } finally { setIsRefreshingInsight(false); }
     };
 
     return (
-        <div className="flex flex-col lg:flex-row justify-between items-stretch gap-6 mb-8 lg:mb-10 relative">
-            {/* Left Block: Greeting */}
-            <div className="lg:w-1/3 flex flex-col justify-center py-2 relative">
+        <div className="flex flex-col xl:flex-row justify-between items-stretch gap-4 sm:gap-6 mb-8 lg:mb-10 px-2 sm:px-0">
+            {/* Column 1: Greeting */}
+            <div className="xl:w-1/3 flex flex-col justify-center py-4 relative">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="relative w-6 h-6">
-                        <EchoBotMascot size={24} isThinking={isRefreshingInsight} />
+                    <EchoBotMascot size={28} isThinking={isRefreshingInsight} />
+                    <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 px-3 py-1 rounded-full">
+                        <span className="text-xs">🔥</span>
+                        <span className="text-[10px] font-black text-red-400 font-mono">{streak} STREAK</span>
                     </div>
-                    <span className="text-[10px] font-mono text-[var(--gold)] uppercase tracking-[0.2em] opacity-80">
-                        {isRefreshingInsight ? 'Calibrating Intel...' : 'System Online'}
-                    </span>
                 </div>
                 
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter neon-text-glow leading-[0.9] mb-4">
-                    {greeting},<br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/40">
-                        {pilotName}.
-                    </span>
-                </h1>
+                <NarrativeWrapper text={`${greeting}, ${pilotName}. Welcome back.`}>
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9] mb-4">
+                        {greeting},<br/>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/40">
+                            {pilotName}.
+                        </span>
+                    </h1>
+                </NarrativeWrapper>
                 
-                {/* 24-hour Persistent Daily Insight */}
-                <div className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl relative overflow-hidden group/insight mt-2 min-h-[80px]">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-[var(--gold)]/20 group-hover/insight:bg-[var(--gold)]/50 transition-colors" />
-                    <p className="text-[9px] font-mono text-white/30 uppercase tracking-widest mb-1">Commander Harvey's Briefing</p>
+                <div className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl relative overflow-hidden group/insight mt-2">
+                    <p className="text-[8px] font-mono text-white/30 uppercase tracking-widest mb-1">Commander Harvey's Briefing</p>
                     <AnimatePresence mode="wait">
-                        {userProfile?.dailyInsight?.text ? (
-                            <motion.p 
-                                key={userProfile.dailyInsight.text}
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-sm text-white/70 leading-relaxed font-light italic"
-                            >
-                                "{userProfile.dailyInsight.text}"
-                            </motion.p>
-                        ) : (
-                            <div className="h-10 flex items-center gap-2 text-white/20 italic text-xs">
-                                <SparklesIcon className="w-3 h-3 animate-spin" />
-                                Synchronizing session data...
-                            </div>
+                        {userProfile?.dailyInsight?.text && (
+                            <NarrativeWrapper text={userProfile.dailyInsight.text} title="Tactical Insight">
+                                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs sm:text-sm text-white/70 leading-relaxed font-light italic">
+                                    "{userProfile.dailyInsight.text}"
+                                </motion.p>
+                            </NarrativeWrapper>
                         )}
                     </AnimatePresence>
                 </div>
             </div>
 
-            {/* Middle Block: HUD Stats */}
-            <div className="lg:w-1/3 grid grid-cols-2 gap-4">
-                <StatWidget 
-                    label="Pilot Level" 
-                    value={Math.floor(progress/10) + 1} 
-                    subtext={`${(10 - (progress % 10)).toFixed(0)}% XP TO NEXT LVL`}
-                    icon={<TargetIcon className="w-6 h-6" />}
-                    colorClass="text-cyan-400"
-                />
-                <StatWidget 
-                    label="Awards" 
-                    value={achievementsCount} 
-                    subtext="UNLOCKED"
-                    icon={<TrophyIcon className="w-6 h-6" />}
-                    colorClass="text-[var(--gold)]"
-                />
-                <div className="col-span-2 bg-white/[0.03] backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center justify-between relative overflow-hidden group">
+            {/* Column 2: Stats Grid */}
+            <div className="xl:w-1/3 grid grid-cols-2 gap-3 sm:gap-4">
+                <StatWidget label="Echo Credits" value={credits.toLocaleString()} subtext="CURRENCY" icon="🪙" colorClass="text-yellow-400" />
+                <StatWidget label="Intelligence" value={Math.floor(progress/10) + 1} subtext="RANK" icon={<TargetIcon className="w-5 h-5" />} colorClass="text-cyan-400" />
+                <div className="col-span-2 bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-5 flex items-center justify-between">
                     <div className="relative z-10">
-                        <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest mb-1">System Mastery</p>
-                        <p className="text-3xl font-black text-white tracking-tighter">{progress.toFixed(0)}<span className="text-lg align-top opacity-50">%</span></p>
+                        <p className="text-[9px] font-mono text-white/40 uppercase mb-1">System Mastery</p>
+                        <p className="text-2xl sm:text-3xl font-black text-white tracking-tighter">{progress.toFixed(0)}%</p>
                     </div>
-                    <div className="w-32 sm:w-48 h-3 bg-black/40 rounded-full overflow-hidden relative z-10 border border-white/5">
-                        <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#fff_5px,#fff_10px)]" />
-                        <motion.div 
-                            className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 relative"
-                            initial={{ width: 0 }} 
-                            animate={{ width: `${progress}%` }} 
-                            transition={{ duration: 1.2, ease: "circOut" }} 
-                        >
-                            <div className="absolute top-0 right-0 bottom-0 w-1 bg-white/50 shadow-[0_0_10px_white]" />
-                        </motion.div>
+                    <div className="w-24 sm:w-48 h-2 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                        <motion.div className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow-[0_0_10px_white]" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 1.2 }} />
                     </div>
-                    <div className="absolute right-0 top-0 bottom-0 w-2/3 bg-gradient-to-l from-blue-500/5 to-transparent pointer-events-none" />
                 </div>
             </div>
 
-            {/* Right Block: Primary Action */}
-            <div className="lg:w-1/3">
-                <button 
-                    onClick={studyPath ? onContinuePathClick : onGeneratePathClick}
-                    className="w-full h-full min-h-[180px] group relative bg-[#e5e5e5] text-black rounded-3xl overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_40px_-10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_-10px_rgba(212,175,55,0.3)] ring-4 ring-black ring-opacity-20"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out z-20 pointer-events-none" />
-                    
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#f0f0f0] to-[#d4d4d4] z-0" />
-                    
-                    <div className="h-full p-7 flex flex-col justify-between relative z-10">
-                        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#000_1.5px,transparent_1.5px)] [background-size:12px_12px] pointer-events-none"></div>
-                        
+            {/* Column 3: Objective CTA */}
+            <div className="xl:w-1/3">
+                <button onClick={studyPath ? onContinuePathClick : onGeneratePathClick} className="w-full h-full min-h-[140px] sm:min-h-[180px] group relative bg-[#e5e5e5] text-black rounded-[2rem] overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#f0f0f0] to-[#d4d4d4] z-0" />
+                    <div className="h-full p-6 sm:p-7 flex flex-col justify-between relative z-10">
                         <div className="flex justify-between items-start">
-                            <span className={`text-[9px] font-bold font-mono uppercase tracking-[0.2em] px-2.5 py-1.5 rounded border backdrop-blur-sm ${studyPath ? 'bg-green-500/10 text-green-800 border-green-500/20' : 'bg-black/5 text-black/50 border-black/10'}`}>
+                            <span className="text-[8px] font-bold font-mono uppercase tracking-[0.2em] px-2 py-1 rounded border border-black/10">
                                 {studyPath ? 'MISSION ACTIVE' : 'NO ORDERS'}
                             </span>
-                            <div className="bg-black/5 p-2 rounded-lg group-hover:bg-black/10 transition-colors">
-                                <SparklesIcon className="w-5 h-5 text-black/40 group-hover:text-black/80 transition-colors" />
-                            </div>
+                            <SparklesIcon className="w-5 h-5 text-black/20" />
                         </div>
-                        
-                        <div className="flex items-end justify-between mt-6">
+                        <div className="flex items-end justify-between">
                             <div className="text-left">
-                                <p className="text-[10px] text-black/40 font-bold uppercase tracking-widest mb-1 pl-0.5">Next Objective</p>
-                                <p className="text-2xl sm:text-3xl font-black leading-none tracking-tight text-black group-hover:scale-105 origin-left transition-transform duration-300">
+                                <p className="text-[9px] text-black/40 font-bold uppercase mb-1">Next Objective</p>
+                                <p className="text-xl sm:text-2xl font-black tracking-tight text-black">
                                     {studyPath ? 'Resume Path' : 'Generate Plan'}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center group-hover:bg-[var(--gold)] group-hover:text-black transition-all duration-300 shadow-xl group-hover:shadow-2xl">
-                                <ChevronRightIcon className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+                            <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center group-hover:bg-[var(--gold)] group-hover:text-black transition-all">
+                                <ChevronRightIcon className="w-4 h-4" />
                             </div>
                         </div>
                     </div>

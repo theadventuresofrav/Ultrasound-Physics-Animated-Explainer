@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EchoBotMascotProps {
@@ -19,137 +19,148 @@ const EchoBotMascot: React.FC<EchoBotMascotProps> = ({
     className = '',
     showGlow = true
 }) => {
+    const [blink, setBlink] = useState(false);
+
+    // Random blink cycle to simulate life
+    useEffect(() => {
+        const triggerBlink = () => {
+            setBlink(true);
+            setTimeout(() => setBlink(false), 150);
+            const nextBlink = Math.random() * 4000 + 2000;
+            setTimeout(triggerBlink, nextBlink);
+        };
+        const timer = setTimeout(triggerBlink, 3000);
+        return () => clearTimeout(timer);
+    }, []);
+
     // State-based color mapping
     const baseColor = isError ? '#ef4444' : isSuccess ? '#22c55e' : 'var(--gold)';
-    const irisColor = isError ? '#f87171' : isSuccess ? '#4ade80' : '#fff';
     const auraColor = isError ? 'rgba(239, 68, 68, 0.4)' : isSuccess ? 'rgba(34, 197, 94, 0.4)' : 'rgba(212, 175, 55, 0.4)';
 
     return (
         <div 
             style={{ width: size, height: size }} 
             className={`relative flex items-center justify-center select-none pointer-events-none ${className}`}
-            aria-label="EchoBot System Mascot"
+            aria-label="EchoBot Advanced Intelligence Mascot"
         >
-            {/* Ambient Aura Glow */}
+            {/* 1. Ambient Background Aura (Theme Aware) */}
             <AnimatePresence>
                 {showGlow && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ 
-                            opacity: isThinking ? [0.3, 0.6, 0.3] : 0.4,
-                            scale: isThinking ? [1, 1.3, 1] : 1,
+                            opacity: isThinking ? [0.2, 0.5, 0.2] : 0.3,
+                            scale: isThinking ? [1, 1.4, 1] : 1,
                             backgroundColor: auraColor
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute inset-0 rounded-full blur-[30px]"
+                        className="absolute inset-0 rounded-full blur-[40px] z-0"
                     />
                 )}
             </AnimatePresence>
 
-            {/* Core Floating Movement */}
+            {/* 2. Main Body Container with Hovering Physics */}
             <motion.div
                 animate={{ 
-                    y: isThinking ? [-size * 0.08, size * 0.08, -size * 0.08] : [-size * 0.04, size * 0.04, -size * 0.04],
-                    rotate: isThinking ? [-2, 2, -2] : [0, 0]
+                    y: isThinking ? [-size * 0.1, size * 0.1, -size * 0.1] : [-size * 0.05, size * 0.05, -size * 0.05],
+                    rotateX: isThinking ? [0, 15, 0] : [0, 5, 0],
+                    rotateY: isThinking ? [0, -15, 0] : [0, -5, 0],
                 }}
                 transition={{ 
-                    y: { duration: isThinking ? 2 : 4, repeat: Infinity, ease: "easeInOut" },
-                    rotate: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                    y: { duration: isThinking ? 2.5 : 5, repeat: Infinity, ease: "easeInOut" },
+                    rotateX: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+                    rotateY: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
                 }}
                 className="relative w-full h-full z-10"
+                style={{ perspective: '500px', transformStyle: 'preserve-3d' }}
             >
-                <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] overflow-visible">
+                <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] overflow-visible">
                     <defs>
-                        <linearGradient id="podGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stopColor="#2c2c2e" />
-                            <stop offset="100%" stopColor="#0a0a0b" />
+                            <stop offset="100%" stopColor="#050505" />
                         </linearGradient>
-                        <filter id="glowEffect">
-                            <feGaussianBlur stdDeviation="2.5" result="blur" />
+                        <filter id="neonGlow">
+                            <feGaussianBlur stdDeviation="1.5" result="blur" />
                             <feComposite in="SourceGraphic" in2="blur" operator="over" />
                         </filter>
                     </defs>
 
-                    {/* Orbital Sound Wave Ring 1 */}
-                    <motion.ellipse
-                        cx="50" cy="50" rx="46" ry="46"
-                        fill="none"
-                        stroke={baseColor}
-                        strokeWidth="0.75"
-                        strokeDasharray="1, 15"
-                        opacity="0.3"
+                    {/* Outer Kinetic Ring (Spinning) */}
+                    <motion.g
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-                    />
+                        transition={{ duration: isThinking ? 4 : 12, repeat: Infinity, ease: "linear" }}
+                        className="origin-center"
+                    >
+                        <circle cx="50" cy="50" r="48" fill="none" stroke={baseColor} strokeWidth="0.5" strokeDasharray="2, 10" opacity="0.2" />
+                        <circle cx="98" cy="50" r="1.5" fill={baseColor} opacity="0.6" />
+                    </motion.g>
 
-                    {/* Orbital Sound Wave Ring 2 (Thinking state) */}
-                    <AnimatePresence>
-                        {isThinking && (
-                            <motion.circle
-                                key="sonar"
-                                cx="50" cy="50" r="40"
-                                fill="none"
-                                stroke={baseColor}
-                                strokeWidth="0.5"
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: [0.8, 1.2], opacity: [0.6, 0] }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
-                            />
-                        )}
-                    </AnimatePresence>
+                    {/* Inner Kinetic Ring (Counter-Spinning) */}
+                    <motion.g
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: isThinking ? 3 : 15, repeat: Infinity, ease: "linear" }}
+                        className="origin-center"
+                    >
+                        <circle cx="50" cy="50" r="42" fill="none" stroke={baseColor} strokeWidth="0.75" strokeDasharray="20, 5" opacity="0.15" />
+                        <rect x="90" y="48" width="4" height="4" fill={baseColor} opacity="0.4" rx="1" />
+                    </motion.g>
 
-                    {/* Mechanical Pod Chassis */}
-                    <circle cx="50" cy="50" r="32" fill="url(#podGradient)" stroke="#1c1c1e" strokeWidth="1" />
+                    {/* Sphere Main Chassis */}
+                    <circle cx="50" cy="50" r="35" fill="url(#bodyGrad)" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
                     
-                    {/* Metallic Detail Ring */}
-                    <circle cx="50" cy="50" r="28" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                    {/* Glass Lens Reflection */}
+                    <path d="M 30 30 Q 50 15 70 30" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeLinecap="round" />
 
-                    {/* Lens/Face Display Area */}
-                    <circle cx="50" cy="50" r="22" fill="#000" />
-                    <circle cx="50" cy="50" r="21" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+                    {/* Digital Face Display Area */}
+                    <circle cx="50" cy="50" r="26" fill="#000" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+                    <circle cx="50" cy="50" r="25" fill="none" stroke={baseColor} strokeWidth="0.2" opacity="0.3" />
 
-                    {/* Reactive Iris Graphics */}
+                    {/* Central Eye / Lens Mechanism */}
                     <g transform="translate(50, 50)">
                         <AnimatePresence mode="wait">
                             {isError ? (
-                                <motion.g key="error" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                                    <path d="M-1 -10 L1 -10 L1 2 L-1 2 Z M-1 5 L1 5 L1 7 L-1 7 Z" fill={baseColor} filter="url(#glowEffect)" />
+                                <motion.g key="err" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                                    <path d="M -8 -8 L 8 8 M 8 -8 L -8 8" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" filter="url(#neonGlow)" />
                                 </motion.g>
                             ) : isSuccess ? (
-                                <motion.g key="success" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                                    <path d="M-8 0 L-2 6 L8 -6" fill="none" stroke={baseColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" filter="url(#glowEffect)" />
+                                <motion.g key="succ" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                                    <path d="M -8 0 L -2 6 L 10 -6" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" filter="url(#neonGlow)" />
                                 </motion.g>
                             ) : (
-                                <motion.g key="idle-thinking">
-                                    {/* Concentric Lens Layers */}
+                                <motion.g key="idle-think">
+                                    {/* Recursive Iris Layers */}
                                     <motion.circle 
-                                        r="6" 
-                                        fill="none" 
-                                        stroke={baseColor} 
-                                        strokeWidth="1.5" 
-                                        opacity="0.6"
-                                        animate={isThinking ? { r: [6, 8, 6], opacity: [0.4, 0.8, 0.4] } : {}}
+                                        r="12" fill="none" stroke={baseColor} strokeWidth="0.5" opacity="0.1"
+                                        animate={isThinking ? { scale: [1, 1.1, 1], opacity: [0.1, 0.3, 0.1] } : {}}
                                         transition={{ duration: 1, repeat: Infinity }}
                                     />
                                     
-                                    {/* Central Pupil */}
-                                    <motion.circle
-                                        r="3"
-                                        fill={irisColor}
-                                        filter="url(#glowEffect)"
-                                        animate={isThinking ? { scale: [1, 1.4, 1] } : { scale: [1, 1.1, 1] }}
-                                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                                    {/* Main Iris */}
+                                    <motion.circle 
+                                        r="8" fill="none" stroke={baseColor} strokeWidth="1.5" opacity="0.4"
+                                        animate={isThinking ? { r: [8, 10, 8] } : {}}
+                                        transition={{ duration: 0.8, repeat: Infinity }}
                                     />
 
-                                    {/* Scanning Horizon Line */}
+                                    {/* The Pupil / Core Node */}
+                                    <motion.circle
+                                        r={blink ? 0 : 5}
+                                        fill={baseColor}
+                                        filter="url(#neonGlow)"
+                                        animate={isThinking ? { scale: [1, 1.3, 1], opacity: [0.8, 1, 0.8] } : { opacity: [0.6, 0.9, 0.6] }}
+                                        transition={{ duration: isThinking ? 0.4 : 2, repeat: Infinity }}
+                                    />
+
+                                    {/* Scanning Beam (Vertical Sweep) */}
                                     <AnimatePresence>
                                         {isThinking && (
-                                            <motion.rect 
-                                                x="-15" y="-0.5" width="30" height="1"
+                                            <motion.rect
+                                                x="-18" width="36" height="1"
                                                 fill={baseColor}
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: [0, 0.8, 0], y: [ -12, 12, -12 ] }}
+                                                opacity="0.6"
+                                                initial={{ y: -15 }}
+                                                animate={{ y: [ -18, 18, -18 ] }}
                                                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                             />
                                         )}
@@ -159,36 +170,43 @@ const EchoBotMascot: React.FC<EchoBotMascotProps> = ({
                         </AnimatePresence>
                     </g>
 
-                    {/* Data Ports Detail */}
+                    {/* Data Ports Detail (Bottom LEDs) */}
                     <g transform="translate(50, 78)">
-                        <circle cx="-8" cy="0" r="1.2" fill={isSuccess ? '#22c55e' : '#1c1c1e'} />
-                        <motion.circle cx="0" cy="0" r="1.2" fill={isThinking ? 'var(--gold)' : '#1c1c1e'} animate={isThinking ? { opacity: [0.3, 1, 0.3] } : {}} transition={{ duration: 0.5, repeat: Infinity }} />
-                        <circle cx="8" cy="0" r="1.2" fill={isError ? '#ef4444' : '#1c1c1e'} />
+                        <circle cx="-10" cy="0" r="1.5" fill={isSuccess ? '#22c55e' : '#1c1c1e'} stroke="rgba(255,255,255,0.05)" />
+                        <motion.circle 
+                            cx="0" cy="0" r="1.5" fill={isThinking ? 'var(--gold)' : '#1c1c1e'} 
+                            animate={isThinking ? { opacity: [0.3, 1, 0.3] } : {}} 
+                            transition={{ duration: 0.5, repeat: Infinity }} 
+                        />
+                        <circle cx="10" cy="0" r="1.5" fill={isError ? '#ef4444' : '#1c1c1e'} stroke="rgba(255,255,255,0.05)" />
                     </g>
                 </svg>
 
-                {/* Micro-Holographic Sound Waves (Floaties) */}
+                {/* Particle Emitters (Floating Intelligence Fragments) */}
                 <AnimatePresence>
-                    {isThinking && Array.from({ length: 3 }).map((_, i) => (
+                    {isThinking && Array.from({ length: 6 }).map((_, i) => (
                         <motion.div
-                            key={`wave-${i}`}
-                            className="absolute bg-white/20 rounded-full"
+                            key={`frag-${i}`}
+                            className="absolute rounded-full"
                             style={{ 
-                                width: 2, 
-                                height: 2,
-                                left: `${30 + (i * 20)}%`,
-                                top: '45%'
+                                width: Math.random() * 3 + 1, 
+                                height: Math.random() * 3 + 1,
+                                backgroundColor: baseColor,
+                                left: `${20 + Math.random() * 60}%`,
+                                top: '50%',
+                                filter: 'blur(0.5px)'
                             }}
-                            initial={{ opacity: 0, y: 0 }}
+                            initial={{ opacity: 0, scale: 0, y: 0 }}
                             animate={{ 
-                                opacity: [0, 0.8, 0],
-                                y: [-40 - (i * 10), -60 - (i * 10)],
-                                scale: [1, 2]
+                                opacity: [0, 0.7, 0],
+                                y: [0, -size * (0.5 + Math.random())],
+                                x: [(Math.random() - 0.5) * 20, (Math.random() - 0.5) * 40],
+                                scale: [1, 1.5, 0.5]
                             }}
                             transition={{ 
-                                duration: 1.5, 
+                                duration: 1.5 + Math.random(), 
                                 repeat: Infinity, 
-                                delay: i * 0.3,
+                                delay: i * 0.2,
                                 ease: "easeOut"
                             }}
                         />
@@ -196,14 +214,14 @@ const EchoBotMascot: React.FC<EchoBotMascotProps> = ({
                 </AnimatePresence>
             </motion.div>
 
-            {/* Dynamic Ground Shadow */}
+            {/* Dynamic Interactive Shadow */}
             <motion.div
                 animate={{ 
                     scaleX: isThinking ? [0.7, 0.9, 0.7] : [0.8, 1, 0.8],
                     opacity: [0.1, 0.2, 0.1]
                 }}
-                transition={{ duration: isThinking ? 2 : 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-[-15%] w-[60%] h-[4%] bg-black rounded-[100%] blur-md z-0"
+                transition={{ duration: isThinking ? 2.5 : 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute bottom-[-15%] w-[60%] h-[5%] bg-black rounded-[100%] blur-xl z-0"
             />
         </div>
     );

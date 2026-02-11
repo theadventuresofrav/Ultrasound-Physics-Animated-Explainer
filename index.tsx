@@ -5,6 +5,8 @@ import { UserProvider } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { AIHistoryProvider } from './contexts/AIHistoryContext';
+import { ConvexProvider } from "convex/react";
+import { convex } from "./lib/convexClient";
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,14 +16,16 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <SettingsProvider>
-      <NotificationProvider>
-        <UserProvider>
-          <AIHistoryProvider>
-            <App />
-          </AIHistoryProvider>
-        </UserProvider>
-      </NotificationProvider>
-    </SettingsProvider>
+    <ConvexProvider client={convex}>
+      <SettingsProvider>
+        <NotificationProvider>
+          <UserProvider>
+            <AIHistoryProvider>
+              <App />
+            </AIHistoryProvider>
+          </UserProvider>
+        </NotificationProvider>
+      </SettingsProvider>
+    </ConvexProvider>
   </React.StrictMode>
 );

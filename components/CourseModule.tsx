@@ -13,7 +13,7 @@ interface CourseModuleProps extends CourseModuleData {
 
 const getFeatureIcon = (feature: string) => {
     const lowerFeature = feature.toLowerCase();
-    if (lowerFeature.includes('ai') || lowerFeature.includes('powered')) return <border-none><SparklesIcon className="w-3.5 h-3.5" /></border-none>;
+    if (lowerFeature.includes('ai') || lowerFeature.includes('powered')) return <SparklesIcon className="w-3.5 h-3.5" />;
     if (lowerFeature.includes('lab') || lowerFeature.includes('simulation') || lowerFeature.includes('interactive')) return <BeakerIcon className="w-3.5 h-3.5" />;
     if (lowerFeature.includes('quiz') || lowerFeature.includes('questions')) return <QuestionMarkCircleIcon className="w-3.5 h-3.5" />;
     return <ListBulletIcon className="w-3.5 h-3.5" />;
@@ -136,7 +136,6 @@ const CourseModule: React.FC<CourseModuleProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
     >
-        {/* Holographic Edge Trace */}
         <AnimatePresence>
             {isHovered && (
                 <motion.div 
@@ -151,7 +150,6 @@ const CourseModule: React.FC<CourseModuleProps> = ({
             )}
         </AnimatePresence>
 
-        {/* Status Subtle Gradient Underlay */}
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ background: `linear-gradient(135deg, ${theme.accent} 0%, transparent 50%)` }} />
 
         <div className="px-8 pt-8 flex justify-between items-start relative z-10">
@@ -217,7 +215,6 @@ const CourseModule: React.FC<CourseModuleProps> = ({
             </div>
         </div>
 
-        {/* Progress System Bar */}
         <div className="absolute bottom-0 left-0 w-full h-1 bg-white/5 z-20 overflow-hidden">
              <motion.div 
                 className={`h-full relative ${isCompleted ? 'bg-green-500' : ''}`}

@@ -5,6 +5,7 @@ import DemoSection from './DemoSection';
 import KnowledgeCheck from './KnowledgeCheck';
 import { useSound } from '../../contexts/SoundContext';
 import { TargetIcon, SparklesIcon, BrainIcon } from '../Icons';
+import ControlButton from './ControlButton';
 
 // --- Doppler Equation Lab: Vector Analysis & Parabolic Flow ---
 const DopplerEquationLab: React.FC = () => {
@@ -26,22 +27,22 @@ const DopplerEquationLab: React.FC = () => {
         return { dopplerShiftHz: shift, color: colorHex, cosineValue: cosVal };
     }, [direction, speed, angle, transmittedFreq]);
 
-    return (
-        <DemoSection
-            title="Doppler Equation Lab"
-            description="The Doppler Shift (Δf) is directly proportional to velocity and frequency, but inversely dependent on the angle's cosine. Δf = (2 * f₀ * v * cosθ) / c."
-            objectives={[
-                "Identify why 90° produces ZERO shift",
-                "Observe frequency's proportional effect on shift",
-                "Differentiate Polarity: Red (Towards) vs Blue (Away)"
-            ]}
-            controls={[
-                "Towards/Away direction buttons",
-                "Frequency (f₀) MHz slider",
-                "Flow Velocity (v) cm/s slider",
-                "Insonation Angle (θ) slider"
-            ]}
-        >
+  return (
+    <DemoSection
+      title="Doppler Equation Lab"
+      description="Master the Doppler Equation: Δf = (2 * f₀ * v * cosθ) / c. Learn how the Doppler shift is proportional to flow velocity and transducer frequency, but dependent on the cosine of the insonation angle. See how measuring at 90 degrees produces a ZERO shift, regardless of flow speed."
+      objectives={[
+        "Analyze why 90° produces ZERO shift (cos 90 = 0)",
+        "Observe how doubling frequency doubles the measured shift",
+        "Correlate red (positive shift) and blue (negative shift) with flow direction"
+      ]}
+      controls={[
+        "Towards/Away direction buttons",
+        "Frequency (f₀) MHz slider",
+        "Flow Velocity (v) cm/s slider",
+        "Insonation Angle (θ) slider"
+      ]}
+    >
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                 <div className="space-y-6">
                     {/* Visual Interface */}
@@ -191,180 +192,225 @@ const DopplerEquationLab: React.FC = () => {
     );
 };
 
-// --- PW Doppler: Spectral Lab with CRT Sweep ---
+// --- PW Doppler: Spectral Lab with Cardiac Cycle Waveforms ---
 const PWDopplerLab: React.FC = () => {
     const [prf, setPrf] = useState(5000);
-    const [velocity, setVelocity] = useState(120);
+    const [baseVelocity, setBaseVelocity] = useState(80);
+    const [gateX, setGateX] = useState(25); // Position along vessel (0-100)
     const [angle, setAngle] = useState(60);
     const [baseline, setBaseline] = useState(50);
-    const { playClick, playHover } = useSound();
+    const [isFrozen, setIsFrozen] = useState(false);
+    
+    // Caliper states (Values in % height of spectral display relative to baseline)
+    const [psvCaliper, setPsvCaliper] = useState<number | null>(null);
+    const [edvCaliper, setEdvCaliper] = useState<number | null>(null);
+    const [meanCaliper, setMeanCaliper] = useState<number | null>(null);
+    const [activeCaliper, setActiveCaliper] = useState<'psv' | 'edv' | 'mean' | null>(null);
 
-    const f0 = 2_500_000; // Use a typical 2.5MHz probe for Doppler
+    const { playClick, playHover } = useSound();
+    const f0 = 2_500_000; // 2.5MHz Doppler probe
     const c = 1540;
     const nyquistLimit = prf / 2;
 
-    const { shift, isAliasing, spectralPoints, cosineValue } = useMemo(() => {
+    // Simulate stenosis: velocity increases where the vessel narrows
+    const localVelocity = useMemo(() => {
+        const stenosisPos = 60;
+        const narrowingFactor = 1 + 2.5 * Math.exp(-Math.pow(gateX - stenosisPos, 2) / 100);
+        return baseVelocity * narrowingFactor;
+    }, [gateX, baseVelocity]);
+
+    const { shiftHz, isAliasing, spectralPoints } = useMemo(() => {
         const angleRad = angle * (Math.PI / 180);
         const cosVal = Math.cos(angleRad);
-        const vMs = velocity / 100;
+        const vMs = localVelocity / 100;
+        const peakDf = (2 * f0 * vMs * cosVal) / c;
         
-        // Doppler Equation: Δf = (2 * f0 * v * cosθ) / c
-        const df = (2 * f0 * vMs * cosVal) / c;
-        
-        // Simulating the spectral trace with aliasing "wrap" logic
-        // We generate a distribution of frequencies around the peak shift
         const points: number[] = [];
-        for (let i = 0; i < 60; i++) {
-            // Add a "envelope" effect to the velocity distribution
-            let val = df * (0.8 + Math.random() * 0.4);
+        const numPoints = 80;
+        
+        for (let i = 0; i < numPoints; i++) {
+            const phase = (i / numPoints) * Math.PI * 4;
+            const pulsatility = 0.2 + 0.8 * Math.max(0, 
+                Math.pow(Math.sin(phase), 2) * Math.exp(-((phase % Math.PI) / 2))
+            );
             
-            // Aliasing logic: Signal wraps to the other side of the baseline if it crosses Nyquist
-            // val = frequency shift. nyquist = prf / 2.
+            let val = peakDf * pulsatility * (0.85 + Math.random() * 0.3);
             while (val > nyquistLimit) val -= prf;
             while (val < -nyquistLimit) val += prf;
             points.push(val);
         }
 
+        const aliasingDetected = Math.abs(peakDf) > nyquistLimit;
         return { 
-            shift: df, 
-            isAliasing: Math.abs(df) > nyquistLimit, 
-            spectralPoints: points,
-            cosineValue: cosVal 
+            shiftHz: peakDf, 
+            isAliasing: aliasingDetected, 
+            spectralPoints: points 
         };
-    }, [velocity, prf, angle, nyquistLimit]);
+    }, [localVelocity, prf, angle, nyquistLimit, isFrozen]); // isFrozen added to lock logic
+
+    const handleFreezeToggle = () => {
+        playClick();
+        setIsFrozen(!isFrozen);
+        if (isFrozen) {
+            setPsvCaliper(null);
+            setEdvCaliper(null);
+            setMeanCaliper(null);
+        }
+    };
+
+    const handleDisplayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isFrozen || !activeCaliper) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const percentFromBottom = 100 - (y / rect.height) * 100;
+        const valFromBaseline = percentFromBottom - baseline;
+        
+        if (activeCaliper === 'psv') setPsvCaliper(valFromBaseline);
+        if (activeCaliper === 'edv') setEdvCaliper(valFromBaseline);
+        if (activeCaliper === 'mean') setMeanCaliper(valFromBaseline);
+        playClick();
+    };
+
+    const pulsatilityIndex = useMemo(() => {
+        if (psvCaliper !== null && edvCaliper !== null && meanCaliper !== null && meanCaliper !== 0) {
+            return Math.abs((psvCaliper - edvCaliper) / meanCaliper);
+        }
+        return null;
+    }, [psvCaliper, edvCaliper, meanCaliper]);
 
     return (
         <DemoSection
-            title="PW Spectral Doppler & Aliasing"
-            description="Pulsed Wave (PW) Doppler provides depth specificity but is limited by the Nyquist limit (PRF/2). When the shift exceeds this limit, the signal 'aliases' or wraps to the opposite side of the display."
+            title="PW Spectral Doppler Lab"
+            description="Observe pulsatile waveforms and the aliasing phenomenon. Use the [FREEZE] function to activate diagnostic calipers and calculate the Pulsatility Index (PI). PI = (PSV - EDV) / Mean Velocity."
             objectives={[
-                "Identify the Nyquist Limit (PRF/2) visually",
-                "Observe how increasing Angle (θ) reduces shift",
-                "Resolve aliasing by increasing PRF (Scale)"
-            ]}
-            controls={[
-                "PRF (Scale) kHz slider",
-                "Input Velocity cm/s slider",
-                "Doppler Angle (θ) slider",
-                "Baseline Shift slider"
+                "Determine peak systolic and end diastolic velocities",
+                "Visualize and calculate hemodynamic indices (PI)",
+                "Identify spectral broadening and wrap-around"
             ]}
         >
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
                 <div className="xl:col-span-8 space-y-6">
+                    {/* Vessel & Gate Visualization */}
+                    <div className="h-32 bg-[#050505] rounded-[2rem] border border-white/10 relative overflow-hidden shadow-inner flex items-center p-4">
+                        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
+                        <svg width="100%" height="60" viewBox="0 0 1000 60" preserveAspectRatio="none" className="relative z-10">
+                            <path d="M 0 10 Q 300 10 500 25 Q 600 28 700 25 Q 800 10 1000 10 L 1000 50 Q 800 50 700 35 Q 600 32 500 35 Q 300 50 0 50 Z" fill="#111" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
+                            {!isFrozen && Array.from({ length: 40 }).map((_, i) => {
+                                const startX = (i * 25) % 1000;
+                                const isNearStenosis = Math.abs(startX - 600) < 150;
+                                return (
+                                    <motion.circle key={i} cx={startX} cy={30 + (Math.random() - 0.5) * 15} r="2" fill="#ef4444" opacity="0.4" animate={{ x: [startX, startX + 1000] }} transition={{ duration: isNearStenosis ? 0.8 : 3, repeat: Infinity, ease: "linear", delay: i * 0.1 }} />
+                                );
+                            })}
+                        </svg>
+                        <div className="absolute top-1/2 -translate-y-1/2 h-20 w-8 border-x-2 border-cyan-400 bg-cyan-400/10 transition-all pointer-events-none" style={{ left: `${gateX}%`, transform: 'translate(-50%, -50%)' }}>
+                            <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-cyan-400" />
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black border border-cyan-400 text-[8px] font-mono text-cyan-400 px-1 rounded shadow-xl uppercase">Gate</div>
+                        </div>
+                    </div>
+
                     {/* Spectral Display */}
-                    <div className="h-80 bg-black rounded-[2.5rem] border border-white/10 relative overflow-hidden shadow-2xl group">
-                        {/* CRT Screen FX */}
+                    <div 
+                        onClick={handleDisplayClick}
+                        className={`h-80 bg-black rounded-[2.5rem] border-2 relative overflow-hidden shadow-2xl transition-all duration-500 cursor-crosshair ${isAliasing ? 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]' : 'border-white/10'} ${isFrozen ? 'ring-2 ring-cyan-500/50' : ''}`}
+                    >
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none z-10" />
-                        
-                        {/* Nyquist Limit Indicators */}
-                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500/40 z-20">
-                             <div className="absolute right-6 top-2 text-[8px] font-mono text-red-500 uppercase tracking-widest">+NYQUIST: {(nyquistLimit/1000).toFixed(1)} kHz</div>
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500/40 z-20">
-                             <div className="absolute right-6 bottom-2 text-[8px] font-mono text-red-500 uppercase tracking-widest">-NYQUIST</div>
-                        </div>
+                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500/40 z-20"><div className="absolute right-6 top-2 text-[8px] font-mono text-red-500 uppercase tracking-widest">+NYQ: {(nyquistLimit/1000).toFixed(1)} kHz</div></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500/40 z-20"><div className="absolute right-6 bottom-2 text-[8px] font-mono text-red-500 uppercase tracking-widest">-NYQ</div></div>
+                        <motion.div className="absolute left-0 right-0 h-[1px] bg-white/40 z-20 shadow-[0_0_10px_white]" animate={{ top: `${100 - baseline}%` }} />
 
-                        {/* Baseline */}
-                        <motion.div 
-                            className="absolute left-0 right-0 h-[1px] bg-white/40 z-20 shadow-[0_0_10px_white]"
-                            animate={{ top: `${100 - baseline}%` }}
-                        />
-
-                        {/* Spectral Data Visualization */}
+                        {/* Spectral Points */}
                         <div className="absolute inset-0 flex items-end px-4">
                             {spectralPoints.map((val, i) => {
-                                // Map frequency shift to display height
-                                // Normalized relative to Nyquist
-                                const height = Math.abs(val / nyquistLimit) * 50; 
-                                const bottomOffset = (val >= 0) 
-                                    ? baseline 
-                                    : baseline - height;
-                                
+                                const height = Math.abs(val / prf) * 100; 
+                                const valRelativeToBaselinePercent = (val / prf) * 100;
+                                const bottomOffset = baseline + (val >= 0 ? 0 : valRelativeToBaselinePercent);
                                 return (
-                                    <motion.div
-                                        key={i}
-                                        className="flex-grow bg-gradient-to-t from-[var(--gold)]/30 via-[var(--gold)] to-white rounded-t-sm"
-                                        animate={{ height: `${height}%`, bottom: `${bottomOffset}%` }}
-                                        transition={{ duration: 0.1 }}
-                                        style={{ position: 'absolute', left: `${(i / 60) * 90 + 5}%`, width: '1.4%' }}
-                                    />
+                                    <div key={i} className={`flex-grow rounded-sm transition-colors duration-300 ${isAliasing ? 'bg-red-500' : 'bg-gradient-to-t from-[var(--gold)]/30 via-[var(--gold)] to-white'}`} style={{ position: 'absolute', left: `${(i / spectralPoints.length) * 90 + 5}%`, width: '0.8%', height: `${height}%`, bottom: `${bottomOffset}%`, opacity: isFrozen ? 0.9 : 1 }} />
                                 );
                             })}
                         </div>
 
-                        {/* CRT Sweep Line FX */}
-                        <motion.div 
-                            className="absolute top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-white/10 to-transparent z-20"
-                            animate={{ left: ['-10%', '110%'] }}
-                            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                        />
+                        {/* Active Caliper Visuals */}
+                        {isFrozen && (
+                            <div className="absolute inset-0 z-30">
+                                {psvCaliper !== null && <div className="absolute w-full h-[1px] bg-green-400 shadow-[0_0_8px_green]" style={{ bottom: `${baseline + psvCaliper}%` }}><span className="text-[7px] text-green-400 ml-4 font-black">PSV</span></div>}
+                                {edvCaliper !== null && <div className="absolute w-full h-[1px] bg-cyan-400 shadow-[0_0_8px_cyan]" style={{ bottom: `${baseline + edvCaliper}%` }}><span className="text-[7px] text-cyan-400 ml-4 font-black">EDV</span></div>}
+                                {meanCaliper !== null && <div className="absolute w-full h-[1px] bg-yellow-400 shadow-[0_0_8px_yellow]" style={{ bottom: `${baseline + meanCaliper}%` }}><span className="text-[7px] text-yellow-400 ml-4 font-black">MEAN</span></div>}
+                            </div>
+                        )}
 
-                        {/* Aliasing Alert */}
-                        <AnimatePresence>
-                            {isAliasing && (
-                                <motion.div 
-                                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-6 py-2 bg-red-600/20 border border-red-600 rounded-xl backdrop-blur-xl z-30 shadow-[0_0_40px_rgba(220,38,38,0.3)]"
-                                >
-                                    <span className="text-xs font-black text-red-400 uppercase tracking-[0.4em] animate-pulse">! ALIASING_SIGNAL_DETECTED !</span>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        {!isFrozen && <motion.div className="absolute top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-white/10 to-transparent z-20" animate={{ left: ['-10%', '110%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} />}
 
-                        {/* Telemetry Readout */}
                         <div className="absolute bottom-6 left-8 font-mono text-[9px] text-white/30 space-y-1 z-30">
-                            <p className="text-[var(--gold)]/60 font-bold uppercase tracking-widest mb-1">Spectral_Analysis_Feed</p>
-                            <p>PRF: {(prf/1000).toFixed(1)} kHz</p>
-                            <p>NYQUIST: ±{(nyquistLimit/1000).toFixed(1)} kHz</p>
-                            <p>RAW_SHIFT: {(shift/1000).toFixed(2)} kHz</p>
+                            <p className="text-[var(--gold)]/60 font-bold uppercase tracking-widest mb-1">Spectral_Data_Node</p>
+                            <p>VELOCITY: {localVelocity.toFixed(1)} cm/s</p>
+                            <p>STATUS: {isFrozen ? 'BUFFER_LOCKED' : 'STREAMING'}</p>
                         </div>
+
+                        {isAliasing && !isFrozen && (
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest z-40 animate-pulse border border-white/20">Aliasing Detected</div>
+                        )}
                     </div>
+
+                    {/* Caliper Action Toolbar */}
+                    <AnimatePresence>
+                        {isFrozen && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex gap-4 justify-center bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-xl">
+                                {(['psv', 'edv', 'mean'] as const).map(type => (
+                                    <button
+                                        key={type}
+                                        onClick={() => { playClick(); setActiveCaliper(type); }}
+                                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${activeCaliper === type ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-black/40 border-white/10 text-white/40'}`}
+                                    >
+                                        [ CALIPER: {type.toUpperCase()} ]
+                                    </button>
+                                ))}
+                                <button onClick={() => { setPsvCaliper(null); setEdvCaliper(null); setMeanCaliper(null); setActiveCaliper(null); playClick(); }} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase text-red-500 bg-red-500/10 border border-red-500/30">Clear</button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
-                <div className="xl:col-span-4 space-y-4 flex flex-col justify-center">
-                    <div className="bg-white/[0.02] p-7 rounded-[2.5rem] border border-white/5 space-y-6 shadow-inner">
-                        {/* PRF Control */}
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-end px-1">
-                                <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">PRF (Scale)</label>
-                                <span className="text-xl font-black text-cyan-400 font-mono">{(prf/1000).toFixed(1)} <span className="text-[10px] opacity-40">kHz</span></span>
-                            </div>
-                            <input type="range" min="1000" max="10000" step="500" value={prf} onChange={e => { setPrf(Number(e.target.value)); playHover(); }} className="w-full h-1 accent-cyan-400 cursor-pointer" />
-                            <div className="flex justify-between text-[7px] text-white/20 font-mono uppercase">
-                                <span>Low PRF (Sensitive)</span>
-                                <span>High PRF (Fast Flow)</span>
-                            </div>
+                <div className="xl:col-span-4 space-y-4 flex flex-col">
+                    <div className="bg-white/[0.02] p-7 rounded-[2.5rem] border border-white/5 space-y-6 shadow-inner flex-grow">
+                        <ControlButton onClick={handleFreezeToggle} fullWidth className={`h-16 ${isFrozen ? 'bg-cyan-500 text-black ring-4 ring-cyan-500/20' : ''}`}>
+                            {isFrozen ? 'UNFREEZE_BUFFER' : 'FREEZE_FRAME'}
+                        </ControlButton>
+
+                        <div className="space-y-3 pt-4">
+                            <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest">Gate Position</label>
+                            <input type="range" min="5" max="95" value={gateX} onChange={e => { setGateX(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1 accent-cyan-400 cursor-pointer" />
                         </div>
 
-                        {/* Velocity Control */}
                         <div className="space-y-3">
-                             <div className="flex justify-between items-end px-1">
-                                <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">Input Velocity</label>
-                                <span className="text-xl font-black text-red-500 font-mono">{velocity} <span className="text-[10px] opacity-40">cm/s</span></span>
-                            </div>
-                            <input type="range" min="10" max="350" value={velocity} onChange={e => { setVelocity(Number(e.target.value)); playHover(); }} className="w-full h-1 accent-red-500 cursor-pointer" />
+                            <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">PRF (Scale)</label>
+                            <input type="range" min="1000" max="10000" step="500" value={prf} onChange={e => { setPrf(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1 accent-cyan-400 cursor-pointer" />
                         </div>
 
-                        {/* Angle Control */}
                         <div className="space-y-3">
-                             <div className="flex justify-between items-end px-1">
-                                <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">Doppler Angle (θ)</label>
-                                <span className="text-xl font-black text-yellow-400 font-mono">{angle}°</span>
-                            </div>
-                            <input type="range" min="0" max="85" step="5" value={angle} onChange={e => { setAngle(Number(e.target.value)); playHover(); }} className="w-full h-1 accent-yellow-400 cursor-pointer" />
-                            <div className="flex justify-between text-[7px] text-white/20 font-mono uppercase">
-                                <span>Cos: {cosineValue.toFixed(2)} (High Shift)</span>
-                                <span>Cos: ~0 (Low Shift)</span>
-                            </div>
+                             <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">Doppler Angle (θ)</label>
+                            <input type="range" min="0" max="85" step="5" value={angle} onChange={e => { setAngle(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1 accent-yellow-400 cursor-pointer" />
                         </div>
+                    </div>
 
-                        {/* Baseline Control */}
-                        <div className="space-y-3 border-t border-white/5 pt-4">
-                             <div className="flex justify-between items-end px-1">
-                                <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">Baseline Shift</label>
-                                <span className="text-sm font-bold text-white/60">{baseline}%</span>
+                    {/* Result Telemetry Card */}
+                    <div className="bg-[#0c0c0e] p-7 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
+                        <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-4">Hemodynamic_Telemetry</h4>
+                        <div className="space-y-4 font-mono">
+                            <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-white/20">PEAK_SYSTOLIC</span>
+                                <span className="text-green-400 font-bold">{psvCaliper !== null ? (Math.abs(psvCaliper * prf / 100) / 10).toFixed(1) : '---'} cm/s</span>
                             </div>
-                            <input type="range" min="10" max="90" value={baseline} onChange={e => { setBaseline(Number(e.target.value)); playHover(); }} className="w-full h-1 accent-white/20 cursor-pointer" />
+                            <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-white/20">END_DIASTOLIC</span>
+                                <span className="text-cyan-400 font-bold">{edvCaliper !== null ? (Math.abs(edvCaliper * prf / 100) / 10).toFixed(1) : '---'} cm/s</span>
+                            </div>
+                            <div className="pt-3 border-t border-white/5 flex justify-between items-end">
+                                <span className="text-[9px] font-black text-yellow-400/80 uppercase">Pulsatility_Index (PI)</span>
+                                <span className="text-3xl font-black text-white tracking-tighter tabular-nums">{pulsatilityIndex !== null ? pulsatilityIndex.toFixed(2) : '---'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -386,11 +432,11 @@ const ColorDopplerLab: React.FC = () => {
     return (
         <DemoSection
             title="Color Steering & Angles"
-            description="Color Doppler depends heavily on the angle of insonation. Steering the color box changes the angle relative to the vessel, maximizing the frequency shift and signal intensity."
+            description="Observe the critical importance of beam steering in Color Doppler. By tilting the color box, you minimize the Doppler angle relative to blood flow, maximizing frequency shift. Perpendicular (90°) incidence results in total signal dropout."
             objectives={[
-                "Identify why perpendicular (90°) is a 'Dead Zone'",
-                "Use steering to maximize sensitivity",
-                "Observe the BART convention (Blue Away, Red Towards)"
+                "Identify signal dropout at 90-degree angles",
+                "Maximize signal intensity via steering calibration",
+                "Analyze flow direction using the BART convention"
             ]}
             controls={[
                 "Steer_Control slider (-20° to +20°)"
@@ -457,6 +503,8 @@ const DopplerDemo: React.FC = () => {
       <ColorDopplerLab />
       <KnowledgeCheck
         moduleId="doppler"
+        title="Hemodynamic Principle Review"
+        description="Verify your mastery of the Doppler shift relationship and the cosine theta variable."
         question="Which component of the Doppler equation is responsible for the 'dead zone' at 90 degrees?"
         options={["Velocity", "Transmitted Frequency", "Cosine of the Angle", "Speed of Sound"]}
         correctAnswer="Cosine of the Angle"

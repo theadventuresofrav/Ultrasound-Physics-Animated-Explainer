@@ -19,11 +19,11 @@ const NatureOfSoundWaveSection: React.FC = () => {
   return (
     <DemoSection
       title="Wave Mechanics Lab"
-      description="Sound is a mechanical, longitudinal wave. Observe how energy is lost to heat as it travels through tissue. Use the particle field to analyze cycle compression."
+      description="Sound is a mechanical, longitudinal wave that travels by vibrating particles. In this lab, you should learn how acoustic variables like pressure and density change in cycles, and how 'attenuation'—the loss of energy as heat—limits our ability to see deep structures. High attenuation media like bone stop sound quickly, while low attenuation media like fluid allow it to pass easily."
       objectives={[
-          "Analyze longitudinal particle motion",
-          "Identify regions of high/low pressure",
-          "Observe attenuation decay over distance"
+          "Observe longitudinal particle displacement",
+          "Identify regions of high pressure (compression)",
+          "Visualize energy decay (attenuation) over distance"
       ]}
       controls={[
           "Energy_Decay_Factor [Attenuation] slider",
@@ -249,11 +249,11 @@ const PropagationSpeedSection: React.FC = () => {
     return (
         <DemoSection
             title="Speed Interface"
-            description="Propagation speed is determined only by the medium. It represents the limit of temporal accuracy in every ultrasound scan."
+            description="The goal of this exercise is to understand that propagation speed is determined ONLY by the medium (stiffness and density). The machine is calibrated to 1540 m/s; any deviation in the tissue leads to 'speed error artifacts' where structures are placed at incorrect depths on the screen."
             objectives={[
-                "Identify speed variations in tissue",
-                "Understand stiffness vs. density effect",
-                "Calibrate range accuracy"
+                "Identify speed variations in different tissues",
+                "Recognize how stiffness overcomes density to increase speed",
+                "Observe the temporal race against soft-tissue calibration"
             ]}
             controls={[
                 "Media_Selection buttons (ADIPOSE, SOFT_PARENCHYMA, STRIATED_MUSCLE, CORTICAL_BONE, PNEUMATIC_GAS)"
@@ -334,6 +334,8 @@ const WavesDemo: React.FC = () => {
       <PropagationSpeedSection />
       <KnowledgeCheck
         moduleId="waves"
+        title="Propagation Velocity Core Mastery"
+        description="Verify your understanding of how media characteristics dictate the speed of acoustic energy in biological tissue."
         question="Which of the following determines the propagation speed of sound?"
         options={["Frequency", "The Medium", "Amplitude", "The Transducer"]}
         correctAnswer="The Medium"

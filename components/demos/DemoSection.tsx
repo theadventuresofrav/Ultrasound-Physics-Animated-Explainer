@@ -1,20 +1,11 @@
-
-import React, { useState } from 'react';
-import { GoogleGenAI, Modality } from '@google/genai';
-import { decode, decodeAudioData } from '../../utils/audio';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../contexts/UserContext';
+import { useSound } from '../../contexts/SoundContext';
 
-// Global AudioContext and source ref to manage playback
-let audioContext: AudioContext | null = null;
-let currentSource: AudioBufferSourceNode | null = null;
-
-const NARRATION_CACHE_KEY_PREFIX = 'echoMastersBriefingCache_v7';
-const AUDIO_SESSION_CACHE_PREFIX = 'echoAudioSession_v1';
-
-const BriefingIcon = ({ isActive, isThrottled }: { isActive: boolean, isThrottled: boolean }) => (
+const BriefingIcon = ({ isActive, isThrottled, isCached }: { isActive: boolean, isThrottled: boolean, isCached: boolean }) => (
     <div className="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-4 h-4 transition-all ${isThrottled ? 'text-white/20' : isActive ? 'text-red-400' : 'text-[var(--gold)]'}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-4 h-4 transition-all ${isThrottled ? 'text-white/20' : isActive ? 'text-red-400' : isCached ? 'text-green-400' : 'text-[var(--gold)]'}`}>
             {isActive ? (
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
             ) : (
@@ -40,123 +31,39 @@ const DemoSection: React.FC<DemoSectionProps> = ({
     controls = [],
     children 
 }) => {
-  const [isNarrating, setIsNarrating] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
-  const { vaultMnemonic, isQuotaExhausted, handleApiError } = useUser();
+  const { isBriefingActive, stopBriefing, playScan, narrateText, briefingStatus } = useSound();
 
   const handleBriefing = async () => {
-      if (isNarrating) {
-          if (currentSource) {
-              currentSource.stop();
-              currentSource.onended = null;
-          }
-          currentSource = null;
-          setIsNarrating(false);
-          setStatus(null);
+      if (isBriefingActive) {
+          stopBriefing();
           return;
       }
-
-      setIsNarrating(true);
-
-      const playAudio = async (base64Audio: string) => {
-          if (!audioContext || audioContext.state === 'closed') {
-              audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-          }
-          if(audioContext.state === 'suspended') await audioContext.resume();
-
-          const audioBuffer = await decodeAudioData(decode(base64Audio), audioContext, 24000, 1);
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(audioContext.destination);
-          source.start();
-
-          currentSource = source;
-          source.onended = () => {
-              if (currentSource === source) {
-                  setIsNarrating(false);
-                  currentSource = null;
-                  setStatus(null);
-              }
-          };
-      };
+      playScan();
       
-      try {
-          if (currentSource) {
-              currentSource.stop();
-              currentSource.onended = null;
-          }
-          
-          const sanitizeKey = (str: string) => str.replace(/[^a-zA-Z0-9]/g, '_');
-          const cacheKey = `${NARRATION_CACHE_KEY_PREFIX}_${sanitizeKey(title)}`;
-          const sessionCacheKey = `${AUDIO_SESSION_CACHE_PREFIX}_${sanitizeKey(title)}`;
-          
-          let cachedAudio = sessionStorage.getItem(sessionCacheKey);
-          
-          if (!cachedAudio) {
-              try { cachedAudio = localStorage.getItem(cacheKey); } catch (e) {}
-          }
+      // IMPLEMENTING THE 9-STEP TACTICAL LECTURE ARCHITECTURE
+      const lectureContext = `
+        TOPIC: ${title}. 
+        MISSION_PARAMS: ${description}. 
+        OBJECTIVES: ${objectives.join('. ')}. 
+        
+        NARRATIVE ARCHITECTURE (STRICT ADHERENCE):
+        1. QUANTIFY EFFORT: Start by stating how you've aggregated complex sources to save them dozens of hours.
+        2. PROMISE ASSESSMENT: Remind them an assessment follows and passive listening is insufficient.
+        3. STRUCTURED ROADMAP: Outline the journey (Definitions, Core Concepts, Practical Application, "Holy Sh*t" Insight).
+        4. DEFINE BY CONTRAST: Explain what this topic is NOT to clarify what it IS.
+        5. MNEMONIC INJECTION: Provide a silly acronym for the variables involved.
+        6. ANALOGY: Use a behavior-based or pop culture analogy to simplify the mechanics.
+        7. PRACTICAL WORKFLOW: Walk through a concrete, step-by-step clinical application.
+        8. BEHAVIORAL MINDSET: Address learning friction and systems-based habit building.
+        9. FINAL ASSESSMENT: End with a question to prove they've learned the material.
 
-          if (cachedAudio) {
-              setStatus("BUFFER_LOADED...");
-              await playAudio(cachedAudio);
-              return;
-          }
-
-          if (isQuotaExhausted) {
-              setStatus("QUOTA_THROTTLED");
-              setTimeout(() => { setIsNarrating(false); setStatus(null); }, 3000);
-              return;
-          }
-
-          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-          setStatus("SYNCING...");
-          
-          const briefingPrompt = `
-            Act as "Mission Commander Echo", an elite ultrasound physics instructor. 
-            Unit Title: "${title}"
-            Current Objectives: ${objectives.join(', ')}
-            Available Interactive Controls: ${controls.length > 0 ? controls.join(', ') : 'Direct manipulation of visual elements'}
-
-            Provide a short high-fidelity tactical briefing explaining exactly HOW to use this lab.
-            Include a Mnemonic at the end clearly labeled "SCRIPT:".
-            Length: 100 words max.
-          `;
-
-          const response = await ai.models.generateContent({
-              model: 'gemini-3-flash-preview',
-              contents: briefingPrompt,
-          });
-
-          const lectureText = response.text;
-          const mnemonicMatch = lectureText.match(/(?:MNEMONIC|SCRIPT):\s*(.*)/i);
-          if (mnemonicMatch && mnemonicMatch[1]) {
-              vaultMnemonic(title, mnemonicMatch[1].trim());
-          }
-
-          const audioResponse = await ai.models.generateContent({
-              model: "gemini-2.5-flash-preview-tts",
-              contents: lectureText,
-              config: {
-                  responseModalities: [Modality.AUDIO],
-                  speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' }}},
-              },
-          });
-
-          const base64Audio = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-          
-          if (base64Audio) {
-              try {
-                  sessionStorage.setItem(sessionCacheKey, base64Audio);
-                  localStorage.setItem(cacheKey, base64Audio);
-              } catch (e) {}
-              setStatus("PLAYING...");
-              await playAudio(base64Audio);
-          }
-      } catch (err: any) {
-          handleApiError(err);
-          setIsNarrating(false);
-          setStatus(null);
-      }
+        CRITICAL NARRATION DIRECTIVE: 
+        - DO NOT say "Part 1", "Step 2", "Mnemonic", or "Roadmap".
+        - DO NOT call out titles or bullet markers.
+        - JUST TALK. Deliver this as a continuous, intense, and encouraging professional monologue.
+      `;
+      
+      await narrateText(lectureContext, `Briefing: ${title}`);
   };
 
   return (
@@ -168,25 +75,24 @@ const DemoSection: React.FC<DemoSectionProps> = ({
           <div className="flex justify-between items-start mb-6">
             <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse shadow-[0_0_10px_var(--gold)]" />
+                    <div className={`w-1.5 h-1.5 rounded-full ${isBriefingActive ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-[var(--gold)] animate-pulse shadow-[0_0_10px_var(--gold)]'}`} />
                     <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">{title}</h3>
                 </div>
-                <p className="text-[10px] font-mono text-white/30 uppercase tracking-[0.4em]">Unit_ID: {title.substring(0, 4).toUpperCase()}_PRM</p>
+                <p className="text-[10px] font-mono text-white/30 uppercase tracking-[0.4em]">
+                    Unit_ID: {title.substring(0, 4).toUpperCase()}_PRM 
+                </p>
             </div>
             
             <button 
                 onClick={handleBriefing} 
-                disabled={isQuotaExhausted && !isNarrating}
                 className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] border transition-all ${
-                    isNarrating 
+                    isBriefingActive 
                         ? 'bg-red-500/10 text-red-400 border-red-500/30 ring-1 ring-red-500/20 shadow-lg' 
-                        : isQuotaExhausted
-                            ? 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed opacity-50'
-                            : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white hover:border-[var(--gold)]/40'
+                        : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white hover:border-[var(--gold)]/40'
                 }`}
             >
-                <BriefingIcon isActive={isNarrating} isThrottled={isQuotaExhausted && !isNarrating} />
-                <span>{isNarrating ? (status || 'STOP') : isQuotaExhausted ? 'UPLINK_PAUSED' : 'ENGAGE_BRIEFING'}</span>
+                <BriefingIcon isActive={isBriefingActive} isThrottled={false} isCached={false} />
+                <span>{isBriefingActive ? (briefingStatus || 'STOP') : 'ENGAGE_TACTICAL_LECTURE'}</span>
             </button>
           </div>
           <p className="text-white/50 text-sm leading-relaxed max-w-3xl font-light">{description}</p>
