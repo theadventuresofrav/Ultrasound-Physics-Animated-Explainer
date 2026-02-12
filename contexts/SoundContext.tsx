@@ -2,7 +2,7 @@ import React, { createContext, useContext, useRef, useEffect, useState, ReactNod
 import { useSettings } from './SettingsContext';
 import { useUser } from './UserContext';
 import { supabase } from '../lib/supabaseClient';
-import { decode, decodeAudioData } from '../utils/audio';
+import { decode, decodeAudioData, getAudioContentHash } from '../utils/audio';
 import { generateQwenTTS } from '../utils/qwen';
 import { GoogleGenAI, Modality } from '@google/genai';
 
@@ -33,16 +33,6 @@ interface SoundContextType {
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
-// Static hashing for consistent cache keys across pregen and components
-export const getAudioContentHash = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return 'v10_' + Math.abs(hash).toString(36);
-};
 
 export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { settings } = useSettings();

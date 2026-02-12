@@ -6,7 +6,7 @@ import { useNotification } from './NotificationContext';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { getModuleIntro } from '../data/moduleIntros';
 import { supabase } from '../lib/supabaseClient';
-import { getAudioContentHash } from './SoundContext';
+import { getAudioContentHash } from '../utils/audio';
 
 const USER_PROFILE_STORAGE_KEY = 'echoMastersUserProfile_v4';
 const GUEST_ID_KEY = 'echoMasters_guest_uuid';

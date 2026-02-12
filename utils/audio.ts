@@ -45,3 +45,17 @@ export async function decodeAudioData(
   }
   return buffer;
 }
+
+/**
+ * Generates a consistent hash for a string.
+ * Used for generating audio cache keys.
+ */
+export const getAudioContentHash = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return 'v10_' + Math.abs(hash).toString(36);
+};
