@@ -23,6 +23,7 @@ interface SoundContextType {
     playBriefing: (base64Audio: string) => Promise<void>;
     stopBriefing: () => void;
     narrateText: (text: string, title?: string) => Promise<void>;
+    getAudioFromCache: (text: string) => Promise<string | null>;
     briefingStatus: string | null;
     isAudioSuspended: boolean;
     resumeAudio: () => Promise<void>;
@@ -31,19 +32,20 @@ interface SoundContextType {
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
-const hashString = (str: string) => {
+// Static hashing for consistent cache keys across pregen and components
+export const getAudioContentHash = (str: string) => {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         const char = str.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
         hash = hash & hash;
     }
-    return Math.abs(hash).toString(36);
+    return 'v10_' + Math.abs(hash).toString(36);
 };
 
 export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { settings } = useSettings();
-    const { userProfile, isQuotaExhausted, handleApiError } = useUser();
+    const { isQuotaExhausted, handleApiError } = useUser();
     const audioContextRef = useRef<AudioContext | null>(null);
     const masterGainRef = useRef<GainNode | null>(null);
     
@@ -124,6 +126,26 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         });
     }, [initAudioContext]);
 
+    const getAudioFromCache = useCallback(async (text: string): Promise<string | null> => {
+        const hash = getAudioContentHash(text);
+        const cacheKey = `global_narr_${hash}`;
+        
+        // 1. Check Local
+        const local = localStorage.getItem(cacheKey);
+        if (local) return local;
+
+        // 2. Check Supabase
+        try {
+            const { data, error } = await supabase.from('audio_cache').select('audio_base64').eq('id', cacheKey).single();
+            if (data && !error) {
+                localStorage.setItem(cacheKey, data.audio_base64);
+                return data.audio_base64;
+            }
+        } catch (e) {}
+
+        return null;
+    }, []);
+
     useEffect(() => {
         const processQueue = async () => {
             if (isProcessingRef.current || narrationQueue.length === 0) return;
@@ -132,27 +154,17 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             setIsBriefingActive(true);
 
             const current = narrationQueue[0];
-            const contentHash = hashString(current.text);
-            const cacheKey = `global_narr_v9_${contentHash}`;
+            const hash = getAudioContentHash(current.text);
+            const cacheKey = `global_narr_${hash}`;
             
-            let audioToPlay: string | null = localStorage.getItem(cacheKey);
+            let audioToPlay = await getAudioFromCache(current.text);
 
             if (!audioToPlay) {
-                setBriefingStatus("LINKING...");
-                try {
-                    const { data, error } = await supabase.from('audio_cache').select('audio_base64').eq('id', cacheKey).single();
-                    if (data && !error) {
-                        audioToPlay = data.audio_base64;
-                        localStorage.setItem(cacheKey, audioToPlay);
-                    } else if (!isQuotaExhausted) {
-                        setBriefingStatus("NEURAL_SYNC...");
+                if (!isQuotaExhausted) {
+                    setBriefingStatus("NEURAL_SYNC...");
+                    try {
                         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-                        
-                        // ENFORCED NARRATION STYLE: Just talk, no metadata.
-                        const speakerText = `Narrate the following text naturally as if you are giving a live, professional speech. 
-                        CRITICAL: Do NOT say "Step 1", "Point 2", "Title", or use any bullet point labels or numbers. 
-                        Just speak the information fluently and conversationally: 
-                        ${current.text}`;
+                        const speakerText = `Narrate the following text naturally as if you are giving a live, professional speech. CRITICAL: Do NOT say "Step 1", "Point 2", "Title", or use any bullet point labels or numbers. Just speak the information fluently: ${current.text}`;
                         
                         const response = await ai.models.generateContent({
                             model: "gemini-2.5-flash-preview-tts",
@@ -167,9 +179,9 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                             localStorage.setItem(cacheKey, audioToPlay);
                             await supabase.from('audio_cache').upsert({ id: cacheKey, audio_base64: audioToPlay, created_at: new Date().toISOString() });
                         }
+                    } catch (err) {
+                        handleApiError(err);
                     }
-                } catch (err) {
-                    handleApiError(err);
                 }
             }
 
@@ -188,7 +200,7 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
 
         processQueue();
-    }, [narrationQueue, playBriefing, isQuotaExhausted, handleApiError]);
+    }, [narrationQueue, playBriefing, isQuotaExhausted, handleApiError, getAudioFromCache]);
 
     const narrateText = useCallback(async (text: string, title?: string) => {
         const id = Math.random().toString(36).substring(7);
@@ -322,7 +334,7 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return (
         <SoundContext.Provider value={{ 
             playHover, playClick, playTypewriter, playSuccess, playError, playScan, playStartup,
-            isBriefingActive, playBriefing, stopBriefing, narrateText, briefingStatus,
+            isBriefingActive, playBriefing, stopBriefing, narrateText, getAudioFromCache, briefingStatus,
             isAudioSuspended, resumeAudio, queueLength: narrationQueue.length
         }}>
             {children}

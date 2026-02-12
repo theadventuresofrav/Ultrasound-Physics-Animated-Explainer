@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Chat } from '@google/genai';
 import { CourseModuleData } from '../types';
@@ -111,11 +110,24 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ activeModule }) => {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="fixed bottom-20 right-3 sm:bottom-28 sm:right-8 w-[calc(100vw-24px)] sm:w-[400px] h-[60vh] sm:h-[600px] bg-[#0a0a0a]/95 backdrop-blur-xl border border-[var(--gold)]/20 rounded-3xl shadow-2xl flex flex-col z-[99] overflow-hidden"
           >
-            <header className="p-4 border-b border-white/10 bg-white/5 flex items-center gap-3">
-              <EchoBotMascot size={28} />
-              <div className="min-w-0">
-                <h3 className="font-black text-xs text-white uppercase tracking-widest">EchoBot</h3>
-                <p className="text-[8px] font-mono text-white/30 uppercase truncate">Secure_Link: Active</p>
+            <header className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <EchoBotMascot size={28} />
+                <div className="min-w-0">
+                    <h3 className="font-black text-xs text-white uppercase tracking-widest">EchoBot</h3>
+                    <p className="text-[8px] font-mono text-white/30 uppercase truncate">Secure_Link: Active</p>
+                </div>
+              </div>
+              {/* Dynamic Wave Visualizer */}
+              <div className="flex items-end gap-[2px] h-4">
+                  {[...Array(6)].map((_, i) => (
+                      <motion.div 
+                        key={i}
+                        className="w-[2px] bg-[var(--gold)] rounded-full"
+                        animate={isLoading ? { height: [2, 16, 2] } : { height: 2 }}
+                        transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.1 }}
+                      />
+                  ))}
               </div>
             </header>
             

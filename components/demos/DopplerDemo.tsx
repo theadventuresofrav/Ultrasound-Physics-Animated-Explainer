@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DemoSection from './DemoSection';
@@ -43,14 +42,14 @@ const DopplerEquationLab: React.FC = () => {
         "Insonation Angle (θ) slider"
       ]}
     >
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                <div className="space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
+                <div className="space-y-4 sm:space-y-6">
                     {/* Visual Interface */}
-                    <div className="relative h-64 bg-[#050505] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group/vessel">
+                    <div className="relative h-48 sm:h-64 bg-[#050505] rounded-[1.25rem] sm:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group/vessel">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(255,255,255,0.02),transparent)]" />
                         
                         {/* The Vessel with Parabolic Flow */}
-                        <div className="absolute top-1/2 left-0 right-0 h-16 -translate-y-1/2 bg-white/5 border-y border-white/5 overflow-hidden">
+                        <div className="absolute top-1/2 left-0 right-0 h-12 sm:h-16 -translate-y-1/2 bg-white/5 border-y border-white/5 overflow-hidden">
                             <div className="absolute inset-0 opacity-10" style={{ backgroundColor: color }} />
                             {Array.from({ length: 15 }).map((_, i) => {
                                 const yPos = (i / 14) * 80 + 10;
@@ -59,7 +58,7 @@ const DopplerEquationLab: React.FC = () => {
                                 return (
                                     <motion.div
                                         key={`${direction}-${i}`}
-                                        className="absolute w-1.5 h-1.5 rounded-full blur-[0.5px]"
+                                        className="absolute w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full blur-[0.5px]"
                                         style={{ 
                                             backgroundColor: color, 
                                             boxShadow: `0 0 8px ${color}`,
@@ -78,28 +77,28 @@ const DopplerEquationLab: React.FC = () => {
                         </div>
 
                         {/* Transducer Beam & Vector Arrow */}
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
-                            <div className="w-16 h-4 bg-gray-700 rounded-t-lg border-x border-t border-white/20" />
+                        <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
+                            <div className="w-12 sm:w-16 h-2 sm:h-4 bg-gray-700 rounded-t-lg border-x border-t border-white/20" />
                             <motion.div 
-                                className="w-1 h-32 origin-top relative"
+                                className="w-0.5 sm:w-1 h-20 sm:h-32 origin-top relative"
                                 style={{ backgroundColor: '#00f3ff' }}
                                 animate={{ rotate: angle }}
                                 transition={{ type: 'spring', stiffness: 50 }}
                             >
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-cyan-400 rounded-full blur-md opacity-40" />
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3 sm:w-4 sm:h-4 bg-cyan-400 rounded-full blur-md opacity-40" />
                                 {/* Angle Indicator */}
-                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-mono text-cyan-400 font-bold bg-black/80 px-1 rounded border border-cyan-400/30 whitespace-nowrap">
+                                <div className="absolute -bottom-5 sm:-bottom-6 left-1/2 -translate-x-1/2 text-[7px] sm:text-[8px] font-mono text-cyan-400 font-bold bg-black/80 px-1 rounded border border-cyan-400/30 whitespace-nowrap">
                                     {angle}°
                                 </div>
                             </motion.div>
                         </div>
 
                         {/* Equation HUD */}
-                        <div className="absolute bottom-6 left-8 bg-black/60 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 space-y-1">
-                             <div className="flex items-center gap-2 text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">
-                                <SparklesIcon className="w-3 h-3 text-[var(--gold)]" /> Mathematical_Engine
+                        <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-8 right-4 sm:right-auto bg-black/60 backdrop-blur-md px-4 sm:px-5 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-white/10 space-y-0.5 sm:space-y-1 overflow-hidden">
+                             <div className="flex items-center gap-2 text-[7px] sm:text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">
+                                <SparklesIcon className="w-2.5 h-2.5 sm:w-3 h-3 text-[var(--gold)]" /> Math_Process
                              </div>
-                             <div className="flex items-baseline gap-1 font-mono text-[10px]">
+                             <div className="flex items-baseline gap-1 font-mono text-[8px] sm:text-[10px] truncate">
                                 <span className="text-white/60">Δf = (2 × </span>
                                 <span className="text-cyan-400 font-bold">{transmittedFreq}M</span>
                                 <span className="text-white/60"> × </span>
@@ -112,10 +111,10 @@ const DopplerEquationLab: React.FC = () => {
                     </div>
 
                     {/* Waveform Trace */}
-                    <div className="h-24 bg-black rounded-2xl border border-white/10 relative overflow-hidden shadow-2xl">
-                         <div className="absolute top-3 left-6 text-[8px] font-black font-mono text-white/20 uppercase tracking-[0.4em]">Shift_Waveform_Telemetry</div>
+                    <div className="h-20 sm:h-24 bg-black rounded-[1rem] sm:rounded-2xl border border-white/10 relative overflow-hidden shadow-2xl">
+                         <div className="absolute top-2 sm:top-3 left-4 sm:left-6 text-[7px] sm:text-[8px] font-black font-mono text-white/20 uppercase tracking-[0.3em] sm:tracking-[0.4em]">Shift_Telemetry</div>
                          <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/5" />
-                         <svg className="absolute inset-0 w-full h-full p-4" preserveAspectRatio="none">
+                         <svg className="absolute inset-0 w-full h-full p-3 sm:p-4" preserveAspectRatio="none">
                             <motion.path 
                                 key={dopplerShiftHz}
                                 d={`M 0 40 Q 25 ${40 - (dopplerShiftHz/100)}, 50 40 T 100 40 T 150 40 T 200 40 T 250 40 T 300 40`}
@@ -130,60 +129,60 @@ const DopplerEquationLab: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex flex-col justify-center gap-6">
+                <div className="flex flex-col justify-center gap-4 sm:gap-6">
                     {/* Controls HUD */}
-                    <div className="bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 space-y-6 shadow-inner">
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/[0.02] p-5 sm:p-8 rounded-[1.25rem] sm:rounded-[2.5rem] border border-white/5 space-y-5 sm:space-y-6 shadow-inner">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
                             <button 
                                 onClick={() => { setDirection('towards'); playClick(); }} 
-                                className={`h-11 rounded-xl border transition-all uppercase text-[9px] font-black tracking-widest ${direction === 'towards' ? 'bg-red-500/20 border-red-500 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-black/40 border-white/10 text-white/20'}`}
+                                className={`h-11 sm:h-11 rounded-lg sm:rounded-xl border transition-all uppercase text-[8px] sm:text-[9px] font-black tracking-widest ${direction === 'towards' ? 'bg-red-500/20 border-red-500 text-red-400 shadow-lg' : 'bg-black/40 border-white/10 text-white/20'}`}
                             >
-                                [ INC: TOWARDS ]
+                                [ TOWARDS ]
                             </button>
                             <button 
                                 onClick={() => { setDirection('away'); playClick(); }} 
-                                className={`h-11 rounded-xl border transition-all uppercase text-[9px] font-black tracking-widest ${direction === 'away' ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-black/40 border-white/10 text-white/20'}`}
+                                className={`h-11 sm:h-11 rounded-lg sm:rounded-xl border transition-all uppercase text-[8px] sm:text-[9px] font-black tracking-widest ${direction === 'away' ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-lg' : 'bg-black/40 border-white/10 text-white/20'}`}
                             >
-                                [ DEC: AWAY ]
+                                [ AWAY ]
                             </button>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                             <div className="flex justify-between items-end px-1">
-                                <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">f₀: Frequency</label>
-                                <span className="text-xl font-black text-cyan-400 font-mono">{transmittedFreq.toFixed(1)} <span className="text-[10px] opacity-40">MHz</span></span>
+                                <label className="text-[8px] sm:text-[9px] font-black text-white/40 uppercase tracking-widest">f₀: Frequency</label>
+                                <span className="text-lg sm:text-xl font-black text-cyan-400 font-mono">{transmittedFreq.toFixed(1)} <span className="text-[8px] sm:text-[10px] opacity-40">MHz</span></span>
                             </div>
-                            <input type="range" min="2" max="12" step="0.5" value={transmittedFreq} onChange={e => { setTransmittedFreq(Number(e.target.value)); playHover(); }} className="w-full h-1 accent-cyan-400 cursor-pointer" />
+                            <input type="range" min="2" max="12" step="0.5" value={transmittedFreq} onChange={e => { setTransmittedFreq(Number(e.target.value)); playHover(); }} className="w-full h-1.5 accent-cyan-400 cursor-pointer" />
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                             <div className="flex justify-between items-end px-1">
-                                <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">v: Flow_Velocity</label>
-                                <span className="text-xl font-black text-red-400 font-mono">{speed} <span className="text-[10px] opacity-40">cm/s</span></span>
+                                <label className="text-[8px] sm:text-[9px] font-black text-white/40 uppercase tracking-widest">v: Flow_Velocity</label>
+                                <span className="text-lg sm:text-xl font-black text-red-400 font-mono">{speed} <span className="text-[8px] sm:text-[10px] opacity-40">cm/s</span></span>
                             </div>
-                            <input type="range" min="10" max="250" value={speed} onChange={e => { setSpeed(Number(e.target.value)); playHover(); }} className="w-full h-1 accent-red-400 cursor-pointer" />
+                            <input type="range" min="10" max="250" value={speed} onChange={e => { setSpeed(Number(e.target.value)); playHover(); }} className="w-full h-1.5 accent-red-400 cursor-pointer" />
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                             <div className="flex justify-between items-end px-1">
-                                <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">θ: Insonation_Angle</label>
-                                <span className="text-xl font-black text-yellow-400 font-mono">{angle}°</span>
+                                <label className="text-[8px] sm:text-[9px] font-black text-white/40 uppercase tracking-widest">θ: Insonation_Angle</label>
+                                <span className="text-lg sm:text-xl font-black text-yellow-400 font-mono">{angle}°</span>
                             </div>
-                            <input type="range" min="0" max="90" step="5" value={angle} onChange={e => setAngle(Number(e.target.value))} className="w-full h-1 accent-yellow-400 cursor-pointer" />
+                            <input type="range" min="0" max="90" step="5" value={angle} onChange={e => setAngle(Number(e.target.value))} className="w-full h-1.5 accent-yellow-400 cursor-pointer" />
                         </div>
                     </div>
 
                     {/* Result Card */}
-                    <div className="bg-[#0c0c0e] p-6 rounded-[2rem] border border-white/5 flex items-center justify-between shadow-2xl relative overflow-hidden group">
+                    <div className="bg-[#0c0c0e] p-5 sm:p-6 rounded-[1.25rem] sm:rounded-[2.5rem] border border-white/5 flex items-center justify-between shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: color }} />
-                        <div className="space-y-1">
-                            <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Computed_Doppler_Shift</p>
-                            <p className="text-4xl font-black text-white tracking-tighter tabular-nums">
-                                {dopplerShiftHz > 0 ? '+' : ''}{dopplerShiftHz.toFixed(0)}<span className="text-lg ml-1 opacity-20">Hz</span>
+                        <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                            <p className="text-[8px] sm:text-[9px] font-black text-white/30 uppercase tracking-[0.2em] sm:tracking-[0.3em]">Result_Shift</p>
+                            <p className="text-2xl sm:text-4xl font-black text-white tracking-tighter tabular-nums truncate">
+                                {dopplerShiftHz > 0 ? '+' : ''}{dopplerShiftHz.toFixed(0)}<span className="text-base sm:text-lg ml-1 opacity-20 uppercase font-mono">Hz</span>
                             </p>
                         </div>
-                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-[var(--gold)]/30 transition-colors">
-                            <TargetIcon className="w-5 h-5 text-[var(--gold)] opacity-60" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-[var(--gold)]/30 transition-colors shrink-0">
+                            <TargetIcon className="w-6 h-6 text-[var(--gold)] opacity-60" />
                         </div>
                     </div>
                 </div>
@@ -201,7 +200,7 @@ const PWDopplerLab: React.FC = () => {
     const [baseline, setBaseline] = useState(50);
     const [isFrozen, setIsFrozen] = useState(false);
     
-    // Caliper states (Values in % height of spectral display relative to baseline)
+    // Caliper states
     const [psvCaliper, setPsvCaliper] = useState<number | null>(null);
     const [edvCaliper, setEdvCaliper] = useState<number | null>(null);
     const [meanCaliper, setMeanCaliper] = useState<number | null>(null);
@@ -212,7 +211,6 @@ const PWDopplerLab: React.FC = () => {
     const c = 1540;
     const nyquistLimit = prf / 2;
 
-    // Simulate stenosis: velocity increases where the vessel narrows
     const localVelocity = useMemo(() => {
         const stenosisPos = 60;
         const narrowingFactor = 1 + 2.5 * Math.exp(-Math.pow(gateX - stenosisPos, 2) / 100);
@@ -246,7 +244,7 @@ const PWDopplerLab: React.FC = () => {
             isAliasing: aliasingDetected, 
             spectralPoints: points 
         };
-    }, [localVelocity, prf, angle, nyquistLimit, isFrozen]); // isFrozen added to lock logic
+    }, [localVelocity, prf, angle, nyquistLimit]);
 
     const handleFreezeToggle = () => {
         playClick();
@@ -281,43 +279,43 @@ const PWDopplerLab: React.FC = () => {
     return (
         <DemoSection
             title="PW Spectral Doppler Lab"
-            description="Observe pulsatile waveforms and the aliasing phenomenon. Use the [FREEZE] function to activate diagnostic calipers and calculate the Pulsatility Index (PI). PI = (PSV - EDV) / Mean Velocity."
+            description="Observe pulsatile waveforms and aliasing. [FREEZE] to activate calipers and calculate PI = (PSV - EDV) / Mean."
             objectives={[
                 "Determine peak systolic and end diastolic velocities",
-                "Visualize and calculate hemodynamic indices (PI)",
-                "Identify spectral broadening and wrap-around"
+                "Visualize and calculate PI index",
+                "Identify spectral wrap-around"
             ]}
         >
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
                 <div className="xl:col-span-8 space-y-6">
                     {/* Vessel & Gate Visualization */}
-                    <div className="h-32 bg-[#050505] rounded-[2rem] border border-white/10 relative overflow-hidden shadow-inner flex items-center p-4">
+                    <div className="h-32 bg-[#050505] rounded-[1.25rem] sm:rounded-[2rem] border border-white/10 relative overflow-hidden shadow-inner flex items-center p-4">
                         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
                         <svg width="100%" height="60" viewBox="0 0 1000 60" preserveAspectRatio="none" className="relative z-10">
                             <path d="M 0 10 Q 300 10 500 25 Q 600 28 700 25 Q 800 10 1000 10 L 1000 50 Q 800 50 700 35 Q 600 32 500 35 Q 300 50 0 50 Z" fill="#111" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
-                            {!isFrozen && Array.from({ length: 40 }).map((_, i) => {
-                                const startX = (i * 25) % 1000;
+                            {!isFrozen && Array.from({ length: 30 }).map((_, i) => {
+                                const startX = (i * 35) % 1000;
                                 const isNearStenosis = Math.abs(startX - 600) < 150;
                                 return (
-                                    <motion.circle key={i} cx={startX} cy={30 + (Math.random() - 0.5) * 15} r="2" fill="#ef4444" opacity="0.4" animate={{ x: [startX, startX + 1000] }} transition={{ duration: isNearStenosis ? 0.8 : 3, repeat: Infinity, ease: "linear", delay: i * 0.1 }} />
+                                    <motion.circle key={i} cx={startX} cy={30 + (Math.random() - 0.5) * 15} r="2.5" fill="#ef4444" opacity="0.4" animate={{ x: [startX, startX + 1000] }} transition={{ duration: isNearStenosis ? 0.8 : 3, repeat: Infinity, ease: "linear", delay: i * 0.1 }} />
                                 );
                             })}
                         </svg>
                         <div className="absolute top-1/2 -translate-y-1/2 h-20 w-8 border-x-2 border-cyan-400 bg-cyan-400/10 transition-all pointer-events-none" style={{ left: `${gateX}%`, transform: 'translate(-50%, -50%)' }}>
                             <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-cyan-400" />
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black border border-cyan-400 text-[8px] font-mono text-cyan-400 px-1 rounded shadow-xl uppercase">Gate</div>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black border border-cyan-400 text-[7px] font-mono text-cyan-400 px-1 rounded shadow-xl uppercase">Gate</div>
                         </div>
                     </div>
 
                     {/* Spectral Display */}
                     <div 
                         onClick={handleDisplayClick}
-                        className={`h-80 bg-black rounded-[2.5rem] border-2 relative overflow-hidden shadow-2xl transition-all duration-500 cursor-crosshair ${isAliasing ? 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]' : 'border-white/10'} ${isFrozen ? 'ring-2 ring-cyan-500/50' : ''}`}
+                        className={`h-64 sm:h-80 bg-black rounded-[1.25rem] sm:rounded-[2.5rem] border-2 relative overflow-hidden shadow-2xl transition-all duration-500 cursor-crosshair ${isAliasing ? 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]' : 'border-white/10'} ${isFrozen ? 'ring-2 ring-cyan-500/50' : ''}`}
                     >
-                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none z-10" />
-                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500/40 z-20"><div className="absolute right-6 top-2 text-[8px] font-mono text-red-500 uppercase tracking-widest">+NYQ: {(nyquistLimit/1000).toFixed(1)} kHz</div></div>
-                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500/40 z-20"><div className="absolute right-6 bottom-2 text-[8px] font-mono text-red-500 uppercase tracking-widest">-NYQ</div></div>
-                        <motion.div className="absolute left-0 right-0 h-[1px] bg-white/40 z-20 shadow-[0_0_10px_white]" animate={{ top: `${100 - baseline}%` }} />
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:30px_30px] sm:bg-[size:40px_40px] pointer-events-none z-10" />
+                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500/40 z-20"><div className="absolute right-4 top-2 text-[7px] font-mono text-red-500 uppercase tracking-widest">+NYQ</div></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500/40 z-20"><div className="absolute right-4 bottom-2 text-[7px] font-mono text-red-500 uppercase tracking-widest">-NYQ</div></div>
+                        <motion.div className="absolute left-0 right-0 h-[1px] bg-white/40 z-20 shadow-[0_0:10px_white]" animate={{ top: `${100 - baseline}%` }} />
 
                         {/* Spectral Points */}
                         <div className="absolute inset-0 flex items-end px-4">
@@ -331,85 +329,76 @@ const PWDopplerLab: React.FC = () => {
                             })}
                         </div>
 
-                        {/* Active Caliper Visuals */}
                         {isFrozen && (
                             <div className="absolute inset-0 z-30">
-                                {psvCaliper !== null && <div className="absolute w-full h-[1px] bg-green-400 shadow-[0_0_8px_green]" style={{ bottom: `${baseline + psvCaliper}%` }}><span className="text-[7px] text-green-400 ml-4 font-black">PSV</span></div>}
-                                {edvCaliper !== null && <div className="absolute w-full h-[1px] bg-cyan-400 shadow-[0_0_8px_cyan]" style={{ bottom: `${baseline + edvCaliper}%` }}><span className="text-[7px] text-cyan-400 ml-4 font-black">EDV</span></div>}
-                                {meanCaliper !== null && <div className="absolute w-full h-[1px] bg-yellow-400 shadow-[0_0_8px_yellow]" style={{ bottom: `${baseline + meanCaliper}%` }}><span className="text-[7px] text-yellow-400 ml-4 font-black">MEAN</span></div>}
+                                {psvCaliper !== null && <div className="absolute w-full h-[1px] bg-green-400 shadow-[0_0:8px_green]" style={{ bottom: `${baseline + psvCaliper}%` }}><span className="text-[7px] text-green-400 ml-4 font-black uppercase">PSV</span></div>}
+                                {edvCaliper !== null && <div className="absolute w-full h-[1px] bg-cyan-400 shadow-[0_0:8px_cyan]" style={{ bottom: `${baseline + edvCaliper}%` }}><span className="text-[7px] text-cyan-400 ml-4 font-black uppercase">EDV</span></div>}
+                                {meanCaliper !== null && <div className="absolute w-full h-[1px] bg-yellow-400 shadow-[0_0:8px_yellow]" style={{ bottom: `${baseline + meanCaliper}%` }}><span className="text-[7px] text-yellow-400 ml-4 font-black uppercase">MEAN</span></div>}
                             </div>
                         )}
 
-                        {!isFrozen && <motion.div className="absolute top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-white/10 to-transparent z-20" animate={{ left: ['-10%', '110%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} />}
-
-                        <div className="absolute bottom-6 left-8 font-mono text-[9px] text-white/30 space-y-1 z-30">
-                            <p className="text-[var(--gold)]/60 font-bold uppercase tracking-widest mb-1">Spectral_Data_Node</p>
-                            <p>VELOCITY: {localVelocity.toFixed(1)} cm/s</p>
-                            <p>STATUS: {isFrozen ? 'BUFFER_LOCKED' : 'STREAMING'}</p>
+                        <div className="absolute bottom-4 left-4 sm:left-8 font-mono text-[8px] text-white/30 space-y-0.5 z-30">
+                            <p className="text-[var(--gold)]/60 font-bold uppercase tracking-widest mb-1 italic">Spectral_Core</p>
+                            <p className="uppercase">Vel: {localVelocity.toFixed(0)} cm/s</p>
+                            <p className="uppercase">Stat: {isFrozen ? 'Buffered' : 'Live'}</p>
                         </div>
-
-                        {isAliasing && !isFrozen && (
-                            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest z-40 animate-pulse border border-white/20">Aliasing Detected</div>
-                        )}
                     </div>
 
-                    {/* Caliper Action Toolbar */}
                     <AnimatePresence>
                         {isFrozen && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex gap-4 justify-center bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-xl">
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-wrap gap-2 justify-center bg-white/5 p-4 rounded-xl sm:rounded-2xl border border-white/10 backdrop-blur-xl">
                                 {(['psv', 'edv', 'mean'] as const).map(type => (
                                     <button
                                         key={type}
                                         onClick={() => { playClick(); setActiveCaliper(type); }}
-                                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${activeCaliper === type ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-black/40 border-white/10 text-white/40'}`}
+                                        className={`px-4 py-2 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${activeCaliper === type ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-black/40 border-white/10 text-white/40'}`}
                                     >
-                                        [ CALIPER: {type.toUpperCase()} ]
+                                        [ {type} ]
                                     </button>
                                 ))}
-                                <button onClick={() => { setPsvCaliper(null); setEdvCaliper(null); setMeanCaliper(null); setActiveCaliper(null); playClick(); }} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase text-red-500 bg-red-500/10 border border-red-500/30">Clear</button>
+                                <button onClick={() => { setPsvCaliper(null); setEdvCaliper(null); setMeanCaliper(null); setActiveCaliper(null); playClick(); }} className="px-4 py-2 rounded-lg sm:rounded-xl text-[9px] font-black uppercase text-red-500 bg-red-500/10 border border-red-500/30">Clear</button>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
 
                 <div className="xl:col-span-4 space-y-4 flex flex-col">
-                    <div className="bg-white/[0.02] p-7 rounded-[2.5rem] border border-white/5 space-y-6 shadow-inner flex-grow">
-                        <ControlButton onClick={handleFreezeToggle} fullWidth className={`h-16 ${isFrozen ? 'bg-cyan-500 text-black ring-4 ring-cyan-500/20' : ''}`}>
-                            {isFrozen ? 'UNFREEZE_BUFFER' : 'FREEZE_FRAME'}
+                    <div className="bg-white/[0.02] p-6 sm:p-7 rounded-[1.25rem] sm:rounded-[2.5rem] border border-white/5 space-y-6 shadow-inner flex-grow">
+                        <ControlButton onClick={handleFreezeToggle} fullWidth className={`h-14 sm:h-16 ${isFrozen ? 'bg-cyan-500 text-black ring-4 ring-cyan-500/20' : ''}`}>
+                            {isFrozen ? 'Resume_Stream' : 'Freeze_Frame'}
                         </ControlButton>
 
-                        <div className="space-y-3 pt-4">
-                            <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest">Gate Position</label>
-                            <input type="range" min="5" max="95" value={gateX} onChange={e => { setGateX(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1 accent-cyan-400 cursor-pointer" />
+                        <div className="space-y-3">
+                            <label className="text-[8px] sm:text-[9px] font-black text-cyan-400 uppercase tracking-widest">Gate Position</label>
+                            <input type="range" min="5" max="95" value={gateX} onChange={e => { setGateX(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1.5 accent-cyan-400 cursor-pointer" />
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">PRF (Scale)</label>
-                            <input type="range" min="1000" max="10000" step="500" value={prf} onChange={e => { setPrf(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1 accent-cyan-400 cursor-pointer" />
+                            <label className="text-[8px] sm:text-[9px] font-black text-white/40 uppercase tracking-widest">PRF (Scale)</label>
+                            <input type="range" min="1000" max="10000" step="500" value={prf} onChange={e => { setPrf(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1.5 accent-cyan-400 cursor-pointer" />
                         </div>
 
                         <div className="space-y-3">
-                             <label className="text-[9px] font-black text-white/40 uppercase tracking-widest">Doppler Angle (θ)</label>
-                            <input type="range" min="0" max="85" step="5" value={angle} onChange={e => { setAngle(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1 accent-yellow-400 cursor-pointer" />
+                             <label className="text-[8px] sm:text-[9px] font-black text-white/40 uppercase tracking-widest">Doppler Angle (θ)</label>
+                            <input type="range" min="0" max="85" step="5" value={angle} onChange={e => { setAngle(Number(e.target.value)); !isFrozen && playHover(); }} disabled={isFrozen} className="w-full h-1.5 accent-yellow-400 cursor-pointer" />
                         </div>
                     </div>
 
-                    {/* Result Telemetry Card */}
-                    <div className="bg-[#0c0c0e] p-7 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
-                        <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-4">Hemodynamic_Telemetry</h4>
+                    <div className="bg-[#0c0c0e] p-6 rounded-[1.25rem] sm:rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400 shadow-[0_0:15px_rgba(34,211,238,0.5)]" />
+                        <h4 className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-4">Hemodynamic_Data</h4>
                         <div className="space-y-4 font-mono">
-                            <div className="flex justify-between items-center text-[10px]">
-                                <span className="text-white/20">PEAK_SYSTOLIC</span>
-                                <span className="text-green-400 font-bold">{psvCaliper !== null ? (Math.abs(psvCaliper * prf / 100) / 10).toFixed(1) : '---'} cm/s</span>
+                            <div className="flex justify-between items-center text-[9px] sm:text-[10px]">
+                                <span className="text-white/20 uppercase">Peak_Systolic</span>
+                                <span className="text-green-400 font-bold">{psvCaliper !== null ? (Math.abs(psvCaliper * prf / 1000)).toFixed(1) : '---'} cm/s</span>
                             </div>
-                            <div className="flex justify-between items-center text-[10px]">
-                                <span className="text-white/20">END_DIASTOLIC</span>
-                                <span className="text-cyan-400 font-bold">{edvCaliper !== null ? (Math.abs(edvCaliper * prf / 100) / 10).toFixed(1) : '---'} cm/s</span>
+                            <div className="flex justify-between items-center text-[9px] sm:text-[10px]">
+                                <span className="text-white/20 uppercase">End_Diastolic</span>
+                                <span className="text-cyan-400 font-bold">{edvCaliper !== null ? (Math.abs(edvCaliper * prf / 1000)).toFixed(1) : '---'} cm/s</span>
                             </div>
                             <div className="pt-3 border-t border-white/5 flex justify-between items-end">
-                                <span className="text-[9px] font-black text-yellow-400/80 uppercase">Pulsatility_Index (PI)</span>
-                                <span className="text-3xl font-black text-white tracking-tighter tabular-nums">{pulsatilityIndex !== null ? pulsatilityIndex.toFixed(2) : '---'}</span>
+                                <span className="text-[8px] sm:text-[9px] font-black text-yellow-400/80 uppercase">PI_Index</span>
+                                <span className="text-2xl sm:text-3xl font-black text-white tracking-tighter tabular-nums">{pulsatilityIndex !== null ? pulsatilityIndex.toFixed(2) : '---'}</span>
                             </div>
                         </div>
                     </div>
@@ -424,7 +413,6 @@ const ColorDopplerLab: React.FC = () => {
     const [steerAngle, setSteerAngle] = useState(0);
     const { playClick, playHover } = useSound();
 
-    // Actual Doppler Angle is 90 (perpendicular) minus the steer angle
     const effectiveAngle = 90 - steerAngle; 
     const cosine = Math.cos(effectiveAngle * (Math.PI / 180));
     const intensity = Math.abs(cosine);
@@ -432,58 +420,87 @@ const ColorDopplerLab: React.FC = () => {
     return (
         <DemoSection
             title="Color Steering & Angles"
-            description="Observe the critical importance of beam steering in Color Doppler. By tilting the color box, you minimize the Doppler angle relative to blood flow, maximizing frequency shift. Perpendicular (90°) incidence results in total signal dropout."
+            description="Observe beam steering in Color Doppler. Tilting the color box minimizes the angle relative to flow, maximizing frequency shift. Perpendicular (90°) incidence results in total signal dropout."
             objectives={[
                 "Identify signal dropout at 90-degree angles",
-                "Maximize signal intensity via steering calibration",
-                "Analyze flow direction using the BART convention"
+                "Maximize signal intensity via steering",
+                "Analyze flow direction via BART"
             ]}
-            controls={[
-                "Steer_Control slider (-20° to +20°)"
-            ]}
+            controls={["Steer_Control slider (-20° to +20°)"]}
         >
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                <div className="relative h-64 bg-black rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center">
-                    {/* Vessel */}
-                    <div className="absolute w-full h-12 bg-white/5 border-y border-white/5" />
-                    
-                    {/* Color Box */}
-                    <motion.div 
-                        className="relative w-48 h-32 border-2 border-dashed border-cyan-400/40 rounded bg-white/[0.02] flex items-center justify-center overflow-hidden"
-                        animate={{ skewX: steerAngle }}
-                        transition={{ type: 'spring', stiffness: 100 }}
-                    >
-                        <div className="absolute inset-0 flex">
-                            <div className="flex-1 bg-red-600 transition-opacity duration-300" style={{ opacity: intensity * 0.6 }} />
-                            <div className="flex-1 bg-blue-600 transition-opacity duration-300" style={{ opacity: intensity * 0.6 }} />
-                        </div>
-                        <div className="relative z-10 text-[7px] font-mono text-cyan-400 tracking-widest uppercase">Steer: {steerAngle}°</div>
-                    </motion.div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
+                <div className="relative flex flex-col gap-6">
+                    <div className="relative h-48 sm:h-64 bg-black rounded-[1.25rem] sm:rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center">
+                        <div className="absolute w-full h-10 sm:h-12 bg-white/5 border-y border-white/5" />
+                        
+                        <motion.div 
+                            className="relative w-40 sm:w-48 h-28 sm:h-32 border-2 border-dashed border-cyan-400/40 rounded bg-white/[0.02] flex items-center justify-center overflow-hidden"
+                            animate={{ skewX: steerAngle }}
+                            transition={{ type: 'spring', stiffness: 100 }}
+                        >
+                            <div className="absolute inset-0 flex">
+                                <div className="flex-1 bg-red-600 transition-opacity duration-300" style={{ opacity: intensity * 0.6 }} />
+                                <div className="flex-1 bg-blue-600 transition-opacity duration-300" style={{ opacity: intensity * 0.6 }} />
+                            </div>
+                            <div className="relative z-10 text-[7px] font-mono text-cyan-400 tracking-widest uppercase">Steer: {steerAngle}°</div>
+                        </motion.div>
 
-                    <div className="absolute top-4 left-6 text-[8px] font-mono text-white/30">EFFECTIVE_ANGLE: {effectiveAngle.toFixed(1)}°</div>
+                        <div className="absolute top-4 left-6 text-[7px] font-mono text-white/30 uppercase">Eff_Angle: {effectiveAngle.toFixed(0)}°</div>
+                    </div>
+
+                    {/* Color Legend HUD */}
+                    <div className="bg-black/60 p-5 rounded-2xl border border-white/10 backdrop-blur-md">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-1 h-3 bg-[var(--gold)]" />
+                            <p className="text-[9px] font-black text-white/50 uppercase tracking-[0.3em] italic">Color_Map_Legend</p>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/5">
+                                <div className="w-6 h-6 rounded-lg bg-red-600 shadow-[0_0:10px_rgba(220,38,38,0.5)] shrink-0" />
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-[8px] font-black text-white/70 uppercase truncate">Towards</span>
+                                    <span className="text-[7px] font-mono text-red-400/80 tracking-tighter truncate">+Shift</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/5">
+                                <div className="w-6 h-6 rounded-lg bg-blue-600 shadow-[0_0:10px_rgba(37,99,235,0.5)] shrink-0" />
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-[8px] font-black text-white/70 uppercase truncate">Away</span>
+                                    <span className="text-[7px] font-mono text-blue-400/80 tracking-tighter truncate">-Shift</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/5 col-span-2 md:col-span-1">
+                                <div className="w-6 h-6 rounded-lg bg-green-500 shadow-[0_0:10px_rgba(34,197,94,0.5)] shrink-0" />
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-[8px] font-black text-white/70 uppercase truncate">Variance</span>
+                                    <span className="text-[7px] font-mono text-green-400/80 tracking-tighter truncate">Turbulence</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex flex-col justify-center space-y-6">
-                    <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-4">Steer_Control</label>
+                    <div className="bg-white/[0.02] p-8 rounded-[1.25rem] sm:rounded-[2.5rem] border border-white/5 shadow-inner">
+                        <label className="text-[9px] font-black text-white/40 uppercase tracking-widest block mb-4">Steer_Control</label>
                         <div className="flex items-center gap-4">
-                            <span className="text-xs text-white/30 font-mono">-20°</span>
+                            <span className="text-[10px] text-white/30 font-mono">-20°</span>
                             <input 
                                 type="range" min="-20" max="20" step="10" 
                                 value={steerAngle} 
                                 onChange={e => { setSteerAngle(Number(e.target.value)); playHover(); }} 
                                 className="flex-grow h-2 accent-cyan-400 cursor-pointer" 
                             />
-                            <span className="text-xs text-white/30 font-mono">+20°</span>
+                            <span className="text-[10px] text-white/30 font-mono">+20°</span>
                         </div>
                         <div className="mt-8 grid grid-cols-2 gap-4">
                             <div className="p-4 bg-black/40 rounded-xl border border-white/5 text-center">
-                                <p className="text-[9px] text-white/30 uppercase mb-1">Cos(θ)</p>
-                                <p className="text-2xl font-black text-[var(--gold)]">{cosine.toFixed(2)}</p>
+                                <p className="text-[8px] text-white/30 uppercase mb-1">Cos(θ)</p>
+                                <p className="text-2xl font-black text-[var(--gold)] font-mono">{cosine.toFixed(2)}</p>
                             </div>
                             <div className="p-4 bg-black/40 rounded-xl border border-white/5 text-center">
-                                <p className="text-[9px] text-white/30 uppercase mb-1">Signal_Int</p>
-                                <p className={`text-2xl font-black ${intensity > 0.3 ? 'text-green-400' : 'text-red-400'}`}>
+                                <p className="text-[8px] text-white/30 uppercase mb-1">Sig_Intensity</p>
+                                <p className={`text-2xl font-black font-mono ${intensity > 0.3 ? 'text-green-400' : 'text-red-400'}`}>
                                     {(intensity * 100).toFixed(0)}%
                                 </p>
                             </div>
@@ -497,7 +514,7 @@ const ColorDopplerLab: React.FC = () => {
 
 const DopplerDemo: React.FC = () => {
   return (
-    <div className="space-y-24 py-8">
+    <div className="space-y-16 sm:space-y-24 py-4 sm:py-8">
       <DopplerEquationLab />
       <PWDopplerLab />
       <ColorDopplerLab />

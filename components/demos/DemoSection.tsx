@@ -5,7 +5,7 @@ import { useSound } from '../../contexts/SoundContext';
 
 const BriefingIcon = ({ isActive, isThrottled, isCached }: { isActive: boolean, isThrottled: boolean, isCached: boolean }) => (
     <div className="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-4 h-4 transition-all ${isThrottled ? 'text-white/20' : isActive ? 'text-red-400' : isCached ? 'text-green-400' : 'text-[var(--gold)]'}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all ${isThrottled ? 'text-white/20' : isActive ? 'text-red-400' : isCached ? 'text-green-400' : 'text-[var(--gold)]'}`}>
             {isActive ? (
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
             ) : (
@@ -28,7 +28,6 @@ const DemoSection: React.FC<DemoSectionProps> = ({
     title, 
     description, 
     objectives = ["Observe physical interactions", "Analyze telemetry data", "Master core principles"], 
-    controls = [],
     children 
 }) => {
   const { isBriefingActive, stopBriefing, playScan, narrateText, briefingStatus } = useSound();
@@ -40,7 +39,6 @@ const DemoSection: React.FC<DemoSectionProps> = ({
       }
       playScan();
       
-      // IMPLEMENTING THE 9-STEP TACTICAL LECTURE ARCHITECTURE
       const lectureContext = `
         TOPIC: ${title}. 
         MISSION_PARAMS: ${description}. 
@@ -52,7 +50,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({
         3. STRUCTURED ROADMAP: Outline the journey (Definitions, Core Concepts, Practical Application, "Holy Sh*t" Insight).
         4. DEFINE BY CONTRAST: Explain what this topic is NOT to clarify what it IS.
         5. MNEMONIC INJECTION: Provide a silly acronym for the variables involved.
-        6. ANALOGY: Use a behavior-based or pop culture analogy to simplify the mechanics.
+        6. ANALOGY: Use behavior-based or pop culture analogy to simplify the mechanics.
         7. PRACTICAL WORKFLOW: Walk through a concrete, step-by-step clinical application.
         8. BEHAVIORAL MINDSET: Address learning friction and systems-based habit building.
         9. FINAL ASSESSMENT: End with a question to prove they've learned the material.
@@ -67,43 +65,43 @@ const DemoSection: React.FC<DemoSectionProps> = ({
   };
 
   return (
-    <div className="group relative bg-[#08080a] border border-white/10 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-[var(--gold)]/30 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)]">
-      <div className="absolute top-6 left-6 w-10 h-10 border-t-2 border-l-2 border-white/5 pointer-events-none group-hover:border-[var(--gold)]/20 transition-colors" />
-      <div className="absolute bottom-6 right-6 w-10 h-10 border-b-2 border-r-2 border-white/5 pointer-events-none group-hover:border-[var(--gold)]/20 transition-colors" />
+    <div className="group relative bg-[#08080a] border border-white/10 rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-[var(--gold)]/30 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)]">
+      <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-white/5 pointer-events-none group-hover:border-[var(--gold)]/20 transition-colors" />
+      <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-white/5 pointer-events-none group-hover:border-[var(--gold)]/20 transition-colors" />
 
-      <div className="p-10 pb-6 relative z-10">
-          <div className="flex justify-between items-start mb-6">
-            <div className="space-y-1">
-                <div className="flex items-center gap-3">
+      <div className="p-6 sm:p-10 pb-5 relative z-10">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-6 mb-5 sm:mb-6">
+            <div className="space-y-1 w-full sm:w-auto">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <div className={`w-1.5 h-1.5 rounded-full ${isBriefingActive ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-[var(--gold)] animate-pulse shadow-[0_0_10px_var(--gold)]'}`} />
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">{title}</h3>
+                    <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter italic truncate break-words">{title}</h3>
                 </div>
-                <p className="text-[10px] font-mono text-white/30 uppercase tracking-[0.4em]">
+                <p className="text-[8px] sm:text-[10px] font-mono text-white/30 uppercase tracking-[0.3em] sm:tracking-[0.4em]">
                     Unit_ID: {title.substring(0, 4).toUpperCase()}_PRM 
                 </p>
             </div>
             
             <button 
                 onClick={handleBriefing} 
-                className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] border transition-all ${
+                className={`w-full sm:w-auto flex items-center justify-center gap-3 px-5 py-2.5 sm:py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] border transition-all ${
                     isBriefingActive 
                         ? 'bg-red-500/10 text-red-400 border-red-500/30 ring-1 ring-red-500/20 shadow-lg' 
                         : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white hover:border-[var(--gold)]/40'
                 }`}
             >
                 <BriefingIcon isActive={isBriefingActive} isThrottled={false} isCached={false} />
-                <span>{isBriefingActive ? (briefingStatus || 'STOP') : 'ENGAGE_TACTICAL_LECTURE'}</span>
+                <span>{isBriefingActive ? (briefingStatus || 'STOP') : 'ENGAGE_LECTURE'}</span>
             </button>
           </div>
-          <p className="text-white/50 text-sm leading-relaxed max-w-3xl font-light">{description}</p>
+          <p className="text-white/50 text-xs sm:text-sm leading-relaxed max-w-3xl font-light italic">"{description}"</p>
       </div>
       
       {children && (
-          <div className="p-10 pt-0">
-              <div className="bg-black/60 rounded-[2rem] border border-white/5 p-8 shadow-inner relative overflow-hidden group/viz">
-                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+          <div className="p-4 sm:p-10 pt-0">
+              <div className="bg-black/60 rounded-[1.25rem] sm:rounded-[2rem] border border-white/5 p-5 sm:p-8 shadow-inner relative overflow-hidden group/viz">
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:30px_30px] sm:bg-[size:40px_40px] pointer-events-none" />
                   
-                  <div className="absolute top-6 left-6 z-20 pointer-events-none space-y-2">
+                  <div className="hidden lg:block absolute top-6 left-6 z-20 pointer-events-none space-y-2">
                        <div className="flex items-center gap-2 mb-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg border border-white/5">
                             <div className="w-1 h-3 bg-[var(--gold)]" />
                             <span className="text-[9px] font-black text-white/60 uppercase tracking-[0.2em]">Briefing_Targets</span>
@@ -115,7 +113,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({
                        ))}
                   </div>
 
-                  <div className="relative z-10">
+                  <div className="relative z-10 mt-0 lg:mt-16">
                     {children}
                   </div>
               </div>

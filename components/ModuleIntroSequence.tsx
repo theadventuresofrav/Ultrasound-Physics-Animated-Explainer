@@ -13,27 +13,25 @@ interface ModuleIntroSequenceProps {
     onComplete: () => void;
 }
 
-// Updated version from v2 to v3 to force regeneration of intro audio
-const MODULE_INTRO_CACHE_PREFIX = 'echoMastersModuleIntroCache_v3';
-
 const DataCloud = () => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Layer 1: Foreground sharp particles */}
-        {Array.from({ length: 40 }).map((_, i) => (
+        {Array.from({ length: 30 }).map((_, i) => (
             <motion.div
                 key={`p1-${i}`}
-                className="absolute w-1 h-1 bg-[var(--gold)]/30 rounded-full"
+                className="absolute w-1 h-1 bg-[var(--gold)]/20 rounded-full"
                 initial={{ 
                     x: Math.random() * 100 + "%", 
                     y: Math.random() * 100 + "%",
-                    opacity: 0
+                    opacity: 0,
+                    scale: Math.random() * 2
                 }}
                 animate={{ 
                     y: ["-10%", "110%"],
-                    opacity: [0, 0.6, 0],
+                    x: (Math.random() > 0.5 ? ["0%", "5%", "0%"] : ["0%", "-5%", "0%"]),
+                    opacity: [0, 0.4, 0],
                 }}
                 transition={{ 
-                    duration: Math.random() * 8 + 4, 
+                    duration: Math.random() * 10 + 6, 
                     repeat: Infinity, 
                     ease: "linear",
                     delay: Math.random() * 5
@@ -44,32 +42,27 @@ const DataCloud = () => (
 );
 
 const HUDFrame = () => (
-    <div className="absolute inset-0 pointer-events-none p-6 sm:p-12">
+    <div className="absolute inset-0 pointer-events-none p-4 sm:p-12">
         <motion.div 
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.2 }}
-            className="w-full h-full border border-white/5 relative rounded-[2rem]"
+            className="w-full h-full border border-white/5 relative rounded-2xl sm:rounded-[2.5rem] overflow-hidden"
         >
-            {/* Corner Markers */}
-            <div className="absolute -top-[1px] -left-[1px] w-12 h-12 border-t border-l border-[var(--gold)]/40 rounded-tl-3xl" />
-            <div className="absolute -top-[1px] -right-[1px] w-12 h-12 border-t border-r border-[var(--gold)]/40 rounded-tr-3xl" />
-            <div className="absolute -bottom-[1px] -left-[1px] w-12 h-12 border-b border-l border-[var(--gold)]/40 rounded-bl-3xl" />
-            <div className="absolute -bottom-[1px] -right-[1px] w-12 h-12 border-b border-r border-[var(--gold)]/40 rounded-br-3xl" />
+            <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay" />
             
-            {/* Top Telemetry */}
-            <div className="absolute top-6 left-8 flex items-center gap-6 font-mono text-[9px] uppercase tracking-[0.4em] text-white/30">
-                <span className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]" />
-                    Tactical_Briefing
+            <div className="absolute top-0 left-0 w-8 sm:w-16 h-8 sm:h-16 border-t border-l border-[var(--gold)]/30 rounded-tl-xl sm:rounded-tl-3xl" />
+            <div className="absolute top-0 right-0 w-8 sm:w-16 h-8 sm:h-16 border-t border-r border-[var(--gold)]/30 rounded-tr-xl sm:rounded-tr-3xl" />
+            <div className="absolute bottom-0 left-0 w-8 sm:w-16 h-8 sm:h-16 border-b border-l border-[var(--gold)]/30 rounded-bl-xl sm:rounded-bl-3xl" />
+            <div className="absolute bottom-0 right-0 w-8 sm:w-16 h-8 sm:h-16 border-b border-r border-[var(--gold)]/30 rounded-br-xl sm:rounded-br-3xl" />
+            
+            <div className="absolute top-6 sm:top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 sm:gap-10 font-mono text-[7px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.5em] text-white/20 whitespace-nowrap px-4 sm:px-10 py-1.5 sm:py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/5">
+                <span className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]" />
+                    Briefing
                 </span>
                 <span className="opacity-10">|</span>
-                <span>Neural_Link: COMMITTING</span>
-            </div>
-
-            {/* Vertical Scale */}
-            <div className="absolute left-[-20px] top-1/2 -translate-y-1/2 flex flex-col gap-12 opacity-10">
-                {[...Array(6)].map((_, i) => <div key={i} className="w-2 h-[1px] bg-white" />)}
+                <span className="text-white/40 truncate max-w-[80px] sm:max-w-none uppercase">Established</span>
             </div>
         </motion.div>
     </div>
@@ -77,51 +70,34 @@ const HUDFrame = () => (
 
 const ModuleIntroSequence: React.FC<ModuleIntroSequenceProps> = ({ moduleId, onComplete }) => {
     const introData = getModuleIntro(moduleId);
-    const { playScan, playClick } = useSound();
+    const { playScan, playClick, getAudioFromCache, playBriefing } = useSound();
     const { handleApiError, isQuotaExhausted } = useUser();
     const [isNarrating, setIsNarrating] = useState(false);
     const [isSkipping, setIsSkipping] = useState(false);
+    const hasStartedRef = useRef(false);
     
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const sourceRef = useRef<AudioBufferSourceNode | null>(null);
-
     useEffect(() => {
-        const narrateIntro = async () => {
-            const cacheKey = `${MODULE_INTRO_CACHE_PREFIX}_${moduleId}`;
-            // MODIFIED: Instruct TTS model to speak naturally.
-            const fullText = `Narrate this intro naturally without calling out titles or bullet markers: Mission Objective: ${introData.title}. ${introData.lines.join(' ')}`;
+        if (hasStartedRef.current) return;
+        hasStartedRef.current = true;
 
-            const playAudio = async (base64Audio: string) => {
-                if (!audioContextRef.current) {
-                    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-                }
-                const ctx = audioContextRef.current;
-                const audioBuffer = await decodeAudioData(decode(base64Audio), ctx, 24000, 1);
-                
-                const source = ctx.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(ctx.destination);
-                source.start();
-                sourceRef.current = source;
+        const narrateIntro = async () => {
+            const fullText = `Narrate this naturally: Mission Objective: ${introData.title}. ${introData.lines.join(' ')}`;
+            
+            const startPlayback = async (base64Audio: string) => {
                 setIsNarrating(true);
                 playScan();
-
-                source.onended = () => {
-                    if (!isSkipping) setTimeout(onComplete, 1500);
-                };
+                await playBriefing(base64Audio);
+                if (!isSkipping) setTimeout(onComplete, 1200);
             };
 
-            // Check Cache First
-            const cachedAudio = localStorage.getItem(cacheKey);
+            const cachedAudio = await getAudioFromCache(fullText);
             if (cachedAudio) {
-                await playAudio(cachedAudio);
+                await startPlayback(cachedAudio);
                 return;
             }
 
-            // Halt network request if we know we are out of quota
             if (isQuotaExhausted) {
-                console.warn("[Quota Throttled] Skipping audio briefing.");
-                setTimeout(onComplete, 3500);
+                setTimeout(onComplete, 4000);
                 return;
             }
 
@@ -141,112 +117,93 @@ const ModuleIntroSequence: React.FC<ModuleIntroSequenceProps> = ({ moduleId, onC
                 });
 
                 const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                
                 if (base64Audio) {
-                    try { localStorage.setItem(cacheKey, base64Audio); } catch (e) {}
-                    await playAudio(base64Audio);
+                    await startPlayback(base64Audio);
                 } else {
-                    throw new Error("No audio payload");
+                    onComplete();
                 }
             } catch (err: any) {
                 handleApiError(err);
                 setIsNarrating(false);
-                if (!isSkipping) {
-                    setTimeout(onComplete, 3500);
-                }
+                if (!isSkipping) setTimeout(onComplete, 4000);
             }
         };
 
         narrateIntro();
-
-        return () => {
-            if (sourceRef.current) {
-                sourceRef.current.stop();
-            }
-        };
-    }, [moduleId, onComplete, introData, playScan, handleApiError, isQuotaExhausted]);
+    }, [moduleId, onComplete, introData, playScan, handleApiError, isQuotaExhausted, getAudioFromCache, playBriefing, isSkipping]);
 
     const handleSkip = () => {
         setIsSkipping(true);
         playClick();
-        if (sourceRef.current) {
-            sourceRef.current.stop();
-            sourceRef.current = null;
-        }
         onComplete();
     };
 
     return (
-        <div className="absolute inset-0 z-[100] bg-[#010102] flex flex-col items-center justify-center overflow-hidden">
-            {/* Visual Atmosphere Layers */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.03)_0%,transparent_70%)] pointer-events-none z-10" />
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none mix-blend-overlay z-20" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)] bg-[size:100%_4px] pointer-events-none z-30" />
+        <div className="absolute inset-0 z-[100] bg-[#010102] flex flex-col items-center justify-center overflow-hidden px-4">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.06)_0%,transparent_80%)] pointer-events-none z-10" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%)] bg-[size:100%_6px] pointer-events-none z-30 opacity-40" />
             
             <DataCloud />
             <HUDFrame />
 
-            {/* Skip Action - High Fidelity */}
             <motion.button 
                 onClick={handleSkip}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2 }}
-                className="absolute bottom-16 sm:bottom-20 z-50 flex flex-col items-center group cursor-pointer"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.5 }}
+                className="absolute bottom-20 sm:bottom-20 z-50 group flex flex-col items-center gap-2"
             >
-                <div className="flex items-center gap-3 px-8 py-3 rounded-full border border-white/10 bg-black/40 backdrop-blur-xl group-hover:border-[var(--gold)]/40 transition-all duration-500 shadow-2xl">
-                    <span className="text-[11px] font-black text-white/30 group-hover:text-white uppercase tracking-[0.3em] transition-colors">
-                        Bypass_Briefing
+                <div className="px-6 sm:px-10 py-3 rounded-full border border-white/10 bg-black/40 backdrop-blur-xl group-hover:border-[var(--gold)]/40 transition-all duration-500 shadow-2xl flex items-center gap-3 sm:gap-4">
+                    <span className="text-[8px] sm:text-[10px] font-black text-white/30 group-hover:text-white uppercase tracking-[0.2em] sm:tracking-[0.4em] transition-colors">
+                        Bypass_Transmission
                     </span>
-                    <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[var(--gold)] group-hover:text-black transition-all">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[var(--gold)] group-hover:text-black transition-all">
+                        <svg className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path d="M13 5l7 7-7 7M5 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </div>
                 </div>
             </motion.button>
 
-            <div className="relative z-30 max-w-5xl px-12 w-full text-center">
-                {/* Main Subject Branding */}
+            <div className="relative z-30 max-w-6xl w-full text-center px-4 sm:px-12">
                 <motion.div
-                    initial={{ opacity: 0, y: 40, filter: 'blur(10px)' }}
+                    initial={{ opacity: 0, y: 50, filter: 'blur(15px)' }}
                     animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
                     className="flex flex-col items-center"
                 >
-                    <div className="relative mb-4">
+                    <div className="relative mb-4 sm:mb-6">
                         <motion.div 
-                            className="absolute -inset-12 bg-[var(--gold)]/5 blur-[80px] rounded-full"
-                            animate={{ opacity: [0.1, 0.4, 0.1], scale: [1, 1.4, 1] }}
-                            transition={{ duration: 5, repeat: Infinity }}
+                            className="absolute -inset-8 sm:-inset-20 bg-[var(--gold)]/5 blur-[40px] sm:blur-[100px] rounded-full"
+                            animate={{ opacity: [0.1, 0.6, 0.1], scale: [1, 1.6, 1] }}
+                            transition={{ duration: 6, repeat: Infinity }}
                         />
                         
-                        <div className="flex items-center gap-4 text-[10px] font-mono text-[var(--gold)] uppercase tracking-[0.8em] opacity-40 mb-6">
-                             <div className="w-8 h-[1px] bg-gradient-to-r from-transparent to-current" />
-                             <span>Neural_Academy_V5</span>
-                             <div className="w-8 h-[1px] bg-gradient-to-l from-transparent to-current" />
+                        <div className="flex items-center justify-center gap-2 sm:gap-4 text-[7px] sm:text-[11px] font-mono text-[var(--gold)] uppercase tracking-[0.4em] sm:tracking-[1em] opacity-40 mb-4 sm:mb-10">
+                             <div className="w-4 sm:w-12 h-[1px] bg-gradient-to-r from-transparent to-current" />
+                             <span className="shrink-0">Syncing_Node</span>
+                             <div className="w-4 sm:w-12 h-[1px] bg-gradient-to-l from-transparent to-current" />
                         </div>
 
-                        <h1 className="text-6xl sm:text-9xl font-black text-white tracking-tighter uppercase leading-[0.85] italic">
+                        <h1 className="text-3xl sm:text-7xl md:text-9xl font-black text-white tracking-tighter uppercase leading-[0.9] italic drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] break-words">
                             {introData.title}
                         </h1>
                     </div>
                 </motion.div>
                 
-                {/* Real-time Audio Reactive Spectral Visualizer */}
-                <div className="mt-16 flex justify-center items-end gap-[4px] h-20 px-10">
-                    {Array.from({ length: 48 }).map((_, i) => (
+                <div className="mt-8 sm:mt-20 flex justify-center items-end gap-[3px] sm:gap-[6px] h-12 sm:h-24 px-4 sm:px-10">
+                    {Array.from({ length: 24 }).map((_, i) => (
                         <motion.div
                             key={i}
-                            className={`w-[3px] rounded-full bg-gradient-to-t from-[var(--gold)] to-white`}
+                            className="w-[2px] sm:w-[4px] rounded-full bg-gradient-to-t from-[var(--gold)]/80 to-white/40 shadow-[0_0_10px_rgba(212,175,55,0.2)]"
                             animate={isNarrating ? { 
-                                height: [8, Math.random() * 80 + 8, 8],
-                                opacity: [0.2, 0.9, 0.2]
-                            } : { height: 4, opacity: 0.05 }}
+                                height: [6, Math.random() * 48 + 8, 6],
+                                opacity: [0.3, 1, 0.3],
+                            } : { height: 4, opacity: 0.1 }}
                             transition={{ 
                                 repeat: Infinity, 
-                                duration: 0.2 + Math.random() * 0.4,
-                                delay: i * 0.01
+                                duration: 0.15 + Math.random() * 0.3,
+                                delay: i * 0.012
                             }}
                         />
                     ))}
@@ -254,35 +211,28 @@ const ModuleIntroSequence: React.FC<ModuleIntroSequenceProps> = ({ moduleId, onC
                 
                 <motion.div 
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.5 }}
-                    transition={{ delay: 1.5 }}
-                    className="mt-12 flex items-center justify-center gap-4"
+                    animate={{ opacity: 0.6 }}
+                    transition={{ delay: 1.8 }}
+                    className="mt-8 sm:mt-16 flex flex-col items-center gap-3 sm:gap-4"
                 >
-                    <div className="h-[1px] w-12 bg-white/10" />
-                    <p className="text-[10px] font-mono text-white uppercase tracking-[0.6em] font-light">
-                        Mission_Directive: Syncing_Intelligence
+                    <p className="text-[7px] sm:text-[11px] font-mono text-white uppercase tracking-[0.3em] sm:tracking-[0.8em] font-black italic">
+                        Neural_Briefing_Ready
                     </p>
-                    <div className="h-[1px] w-12 bg-white/10" />
+                    <div className="h-[1px] sm:h-[2px] w-24 sm:w-64 bg-gradient-to-r from-transparent via-[var(--gold)]/40 to-transparent" />
                 </motion.div>
             </div>
 
-            {/* Background Symbols */}
-            <div className="absolute top-1/2 left-12 -translate-y-1/2 opacity-5 select-none pointer-events-none">
-                 <BrainIcon className="w-64 h-64 text-white" />
-            </div>
-            <div className="absolute top-1/2 right-12 -translate-y-1/2 opacity-5 select-none pointer-events-none">
-                 <SparklesIcon className="w-64 h-64 text-white rotate-12" />
-            </div>
-
-            {/* Tactical Metadata Grid */}
-            <div className="absolute bottom-12 left-0 right-0 px-16 flex justify-between items-center z-40 pointer-events-none opacity-20 font-mono text-[9px] uppercase tracking-[0.4em] font-black">
-                <div className="flex items-center gap-8">
-                    <span>Buffer: {isNarrating ? 'SYNC' : 'IDLE'}</span>
-                    <span>Link_Quality: 100%</span>
+            <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 px-6 sm:px-20 flex justify-between items-center z-40 pointer-events-none opacity-30 font-mono text-[6px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.5em] font-black text-white/50">
+                <div className="flex items-center gap-4 sm:gap-12">
+                    <span className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
+                        <span className="hidden xs:inline">Buffer:</span> {isNarrating ? 'STREAM' : 'WAIT'}
+                    </span>
+                    <span className="hidden sm:inline">Link: 1.2 GB/S</span>
                 </div>
-                <div className="flex items-center gap-8 text-right">
-                    <span>Sec_Sector: {moduleId.toUpperCase()}</span>
-                    <span>Version: 5.0.2-OMEGA</span>
+                <div className="flex items-center gap-4 sm:gap-12 text-right">
+                    <span className="truncate max-w-[60px] sm:max-w-none">Node: {moduleId.toUpperCase()}</span>
+                    <span className="hidden sm:inline">Arch: OMEGA_5</span>
                 </div>
             </div>
         </div>

@@ -1,14 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>EchoMasters - Premium Ultrasound Education</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script type="importmap">
 {
   "imports": {
@@ -19,9 +20,9 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.22",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.3",
-    "convex/react": "https://esm.sh/convex@1.19.0/react",
-    "convex/browser": "https://esm.sh/convex@1.19.0/browser",
-    "convex/": "https://esm.sh/convex@^1.31.7/"
+    "convex/react": "https://esm.sh/convex@1.16.0/react?deps=react@19.2.0",
+    "convex/browser": "https://esm.sh/convex@1.16.0/browser",
+    "convex/": "https://esm.sh/convex@1.16.0/"
   }
 }
 </script>
@@ -63,8 +64,44 @@
         background-color: var(--bg-primary);
         color: #e5e5e5;
         overflow-x: hidden;
+        padding-bottom: env(safe-area-inset-bottom);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
+      /* Action UI Utilities */
+      .glitch-text {
+        position: relative;
+        animation: glitch 1s infinite linear alternate-reverse;
+      }
+
+      @keyframes glitch {
+        0% { text-shadow: 2px 0 red, -2px 0 cyan; }
+        25% { text-shadow: -2px 0 red, 2px 0 cyan; }
+        50% { text-shadow: 2px 2px red, -2px -2px cyan; }
+        75% { text-shadow: -2px 2px red, 2px -2px cyan; }
+        100% { text-shadow: 2px 0 red, -2px 0 cyan; }
+      }
+
+      .shake-heavy {
+        animation: shake 0.2s infinite;
+      }
+
+      @keyframes shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+      }
+
+      /* Global Grainy Noise Overlay */
       body::after {
         content: "";
         position: fixed;
@@ -72,31 +109,14 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 200 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
         pointer-events: none;
         z-index: 9998;
         mix-blend-mode: overlay;
       }
 
-      .scanning-beam {
-        position: fixed;
-        top: 0;
-        left: -100%;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.03), transparent);
-        z-index: 9997;
-        pointer-events: none;
-        animation: scan-horizontal 8s linear infinite;
-        transform: skewX(-20deg);
-      }
-
-      @keyframes scan-horizontal {
-        0% { left: -100%; }
-        100% { left: 200%; }
-      }
-
-      [data-theme="Neon"] body::before {
+      /* CRT Scanline Effect (Subtle) */
+      body::before {
         content: " ";
         display: block;
         position: fixed;
@@ -104,54 +124,90 @@
         left: 0;
         bottom: 0;
         right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 255, 0, 0.03));
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 255, 0, 0.02));
         z-index: 9999;
-        background-size: 100% 2px, 3px 100%;
+        background-size: 100% 3px, 3px 100%;
         pointer-events: none;
+        opacity: 0.3;
       }
 
-      .neon-text-glow {
-        text-shadow: var(--text-shadow);
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
       }
-      
-      .neon-box-glow {
-        box-shadow: var(--box-glow);
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
 
-      ::selection {
-        background-color: var(--gold-dim);
-        color: #ffffff;
+      .scanning-beam {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.02), transparent);
+        z-index: 9997;
+        pointer-events: none;
+        animation: scan-horizontal 12s linear infinite;
+        transform: skewX(-30deg);
+      }
+
+      @keyframes scan-horizontal {
+        0% { left: -150%; }
+        100% { left: 250%; }
       }
 
       ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: transparent;
+        background: rgba(0,0,0,0.3);
       }
       ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        border-radius: 10px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.4);
+        background: var(--gold-dim);
       }
 
       .graticule-bg {
         background-color: #050505;
         background-image:
-          linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-        background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
-        background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+          linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
       }
 
       *:focus-visible {
-        outline: 2px solid var(--gold) !important;
-        outline-offset: 2px !important;
+        outline: 1px solid var(--gold) !important;
+        outline-offset: 4px !important;
+      }
+
+      input, textarea, select {
+        font-size: 16px !important;
+      }
+      
+      .text-glow {
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      }
+      
+      .gold-text-glow {
+        text-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+      }
+
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+      
+      .animate-shimmer {
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        background-size: 200% 100%;
+        animation: shimmer 3s infinite;
       }
     </style>
   </head>

@@ -6,11 +6,18 @@ import { useNotification } from './NotificationContext';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { getModuleIntro } from '../data/moduleIntros';
 import { supabase } from '../lib/supabaseClient';
-import { useMutation } from "convex/react";
+import { getAudioContentHash } from './SoundContext';
 
 const USER_PROFILE_STORAGE_KEY = 'echoMastersUserProfile_v4';
-const MODULE_INTRO_CACHE_PREFIX = 'echoMastersModuleIntroCache_v1';
 const GUEST_ID_KEY = 'echoMasters_guest_uuid';
+
+const ONBOARDING_TEXTS = [
+    "System Initialization. Welcome to the EchoMasters Interface. We are calibrating your learning environment. Prepare for a high-fidelity deep dive into Ultrasound Physics.",
+    "Interactive Physics Engine. Static text is obsolete. Engage with our real-time simulations to manipulate waves, artifacts, and hemodynamics. Don't just read physics—control it.",
+    "AI Neural Link. EchoBot is online. Your advanced AI copilot is ready to analyze concepts, answer queries, and generate custom practice scenarios on demand.",
+    "Tactical Study Path. Don't guess what to study. Generate a strategic, AI-driven roadmap tailored specifically to your exam date, strengths, and learning style.",
+    "Mission: Mastery. Your command center is ready. Track your stats, conquer the modules, and prepare to dominate the SPI exam."
+];
 
 const defaultProfile: UserProfile = {
     name: 'Guest User',
@@ -85,14 +92,10 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [syncProgress, setSyncProgress] = useState(0);
     const [isQuotaExhausted, setIsQuotaExhausted] = useState(false);
     const { addNotification } = useNotification();
     const syncInitiated = useRef(false);
     const guestIdRef = useRef<string | null>(localStorage.getItem(GUEST_ID_KEY));
-
-    // Optional Convex mutation for user profile sync (Requires 'convex/users' to exist)
-    // const syncConvexProfile = useMutation("users:syncProfile");
 
     const handleApiError = useCallback((err: any) => {
         const errorString = JSON.stringify(err);
@@ -162,11 +165,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             data: userProfile, 
                             updated_at: new Date().toISOString() 
                         });
-                    
-                    // Preparation for Convex sync
-                    // if (syncConvexProfile) {
-                    //   await syncConvexProfile({ userId: guestIdRef.current, data: userProfile });
-                    // }
                 } catch (e) {}
             };
             syncToCloud();
@@ -180,51 +178,64 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
         
-        let targets: DemoId[] = [];
-        if (profile.studyPath?.weeklyPlan) {
-             targets = profile.studyPath.weeklyPlan
-                .flatMap(w => w.recommendedModuleIds)
-                .filter(id => !profile.completedModules.includes(id))
-                .slice(0, 1);
-        } else {
-            targets = COURSE_MODULES
-                .map(m => m.id)
-                .filter(id => !profile.completedModules.includes(id))
-                .slice(0, 1);
-        }
-
-        if (targets.length === 0) {
-            setIsSyncing(false);
-            return;
-        }
-
-        for (let i = 0; i < targets.length; i++) {
+        // 1. Warm up Onboarding Cache
+        for (const text of ONBOARDING_TEXTS) {
             if (isQuotaExhausted) break;
-            const moduleId = targets[i];
-            const introData = getModuleIntro(moduleId);
-            const cacheKey = `${MODULE_INTRO_CACHE_PREFIX}_${moduleId}`;
+            const hash = getAudioContentHash(text);
+            const cacheKey = `global_narr_${hash}`;
             
             if (!localStorage.getItem(cacheKey)) {
                 try {
-                    const fullText = `Mission Objective: ${introData.title}. ${introData.lines.join(' ')}`;
-                    const response = await ai.models.generateContent({
-                        model: "gemini-3-flash-preview",
-                        contents: [{ parts: [{ text: fullText }] }],
-                        config: {
-                            responseModalities: [Modality.AUDIO],
-                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' }}},
-                        },
-                    });
-
-                    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                    if (base64Audio) {
-                        try { localStorage.setItem(cacheKey, base64Audio); } catch(e) {}
+                    const { data } = await supabase.from('audio_cache').select('id').eq('id', cacheKey).single();
+                    if (!data) {
+                        const response = await ai.models.generateContent({
+                            model: "gemini-2.5-flash-preview-tts",
+                            contents: [{ parts: [{ text: `Narrate this naturally: ${text}` }] }],
+                            config: {
+                                responseModalities: [Modality.AUDIO],
+                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' }}},
+                            },
+                        });
+                        const audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                        if (audio) {
+                            localStorage.setItem(cacheKey, audio);
+                            await supabase.from('audio_cache').upsert({ id: cacheKey, audio_base64: audio, created_at: new Date().toISOString() });
+                            await new Promise(r => setTimeout(r, 10000)); // Throttle
+                        }
                     }
-                    await new Promise(r => setTimeout(r, 15000));
-                } catch (err: any) {
-                    handleApiError(err);
-                    break;
-                }
+                } catch (e) { handleApiError(e); }
+            }
+        }
+
+        // 2. Warm up Module Intro Cache (First 5)
+        const targets = COURSE_MODULES.map(m => m.id).slice(0, 5);
+        for (const moduleId of targets) {
+            if (isQuotaExhausted) break;
+            const introData = getModuleIntro(moduleId);
+            const fullText = `Narrate this naturally: Mission Objective: ${introData.title}. ${introData.lines.join(' ')}`;
+            const hash = getAudioContentHash(fullText);
+            const cacheKey = `global_narr_${hash}`;
+            
+            if (!localStorage.getItem(cacheKey)) {
+                try {
+                    const { data } = await supabase.from('audio_cache').select('id').eq('id', cacheKey).single();
+                    if (!data) {
+                        const response = await ai.models.generateContent({
+                            model: "gemini-2.5-flash-preview-tts",
+                            contents: [{ parts: [{ text: fullText }] }],
+                            config: {
+                                responseModalities: [Modality.AUDIO],
+                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' }}},
+                            },
+                        });
+                        const audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                        if (audio) {
+                            localStorage.setItem(cacheKey, audio);
+                            await supabase.from('audio_cache').upsert({ id: cacheKey, audio_base64: audio, created_at: new Date().toISOString() });
+                            await new Promise(r => setTimeout(r, 10000));
+                        }
+                    }
+                } catch (e) { handleApiError(e); }
             }
         }
 
@@ -233,7 +244,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         if (userProfile && !syncInitiated.current) {
-            const timer = setTimeout(() => runPregenerationSync(userProfile), 15000);
+            const timer = setTimeout(() => runPregenerationSync(userProfile), 10000);
             return () => clearTimeout(timer);
         }
     }, [userProfile, runPregenerationSync]);

@@ -1,4 +1,3 @@
-
 import { CourseModuleData } from './types';
 
 export const COURSE_MODULES: CourseModuleData[] = [
@@ -8,7 +7,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🌊',
     title: 'Propagation Speed & Acoustic Variables',
     description: 'Explore how sound travels through different media. Understand the key acoustic variables and the factors that determine propagation speed in this foundational lesson.',
-    features: ['Longitudinal wave simulation', 'Interactive acoustic variables', 'Propagation speed in different media'],
+    features: ['Longitudinal wave simulation', 'Interactive acoustic variables', 'Kinetic speed deviation matrix'],
     hasWaveAnimation: true,
   },
   {
@@ -17,7 +16,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '⚡',
     title: 'Fundamentals of Ultrasound Transducers',
     description: 'A deep dive into exploring Transducers & Transducer Components. Learn about the piezoelectric effect, component trade-offs, frequency selection, and bandwidth.',
-    features: ['Piezoelectric Effect Animations', 'Damping & Resolution Trade-off', 'Frequency vs. Resolution/Penetration', 'Bandwidth & Pulse Duration', 'Clinical Frequency Selection'],
+    features: ['Piezoelectric Energy Conversion', 'Backing Material Resolution Lab', 'Resonance Frequency Selection'],
   },
   {
     id: 'resolution',
@@ -25,7 +24,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🔍',
     title: 'Axial & Lateral Resolution',
     description: 'Understand resolution concepts through precise beam width demonstrations and target separation exercises.',
-    features: ['Beam width visualizations', 'Point target simulations', 'Resolution limit testing'],
+    features: ['LARRD vs LATA Visualization', 'Dynamic Focal Point Control', 'Slice Thickness Depth Analysis'],
   },
   {
     id: 'pulsed',
@@ -33,7 +32,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '📡',
     title: 'Pulsed Wave Operation',
     description: 'Master pulse-echo cycles with dynamic timing diagrams and PRF calculations through interactive scenarios.',
-    features: ['Pulse-echo timing animations', 'PRF calculation tools', 'Depth-time relationships'],
+    features: ['Range Equation Chronometer', 'PRP/PRF Timing Interface', 'Duty Factor Duty Cycle HUD'],
   },
    {
     id: 'doppler',
@@ -42,10 +41,9 @@ export const COURSE_MODULES: CourseModuleData[] = [
     title: 'Doppler Physics & Imaging Modes',
     description: 'Master the Doppler effect, from the core equation to a full breakdown of CW, PW, Color, and Power Doppler modes in clinical practice.',
     features: [
-        'Interactive Doppler Equation Lab',
-        'CW vs. PW Clinical Scenarios',
-        'Visualize all 4 Doppler Modes',
-        'Interactive Sample Gate for PW'
+        'Vector Analysis & Parabolic Flow',
+        'Spectral Doppler Caliper Lab',
+        'Color Steering & Angle Correction'
     ],
   },
   {
@@ -54,7 +52,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🎛️',
     title: 'System Optimization (Knobology)',
     description: 'A hands-on simulator to master the art of image optimization. Learn what each knob does and how to combine them to get the perfect image in any clinical scenario.',
-    features: ['Interactive Control Panel', 'Optimize Suboptimal Images', 'Guided Clinical Scenarios'],
+    features: ['Interactive Control Panel', 'Master Signal-to-Noise Ratio', 'Optimization Console Feedback'],
   },
    {
     id: 'artifacts',
@@ -62,7 +60,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🎨',
     title: 'Common Imaging Artifacts',
     description: 'Learn to identify and understand the most common imaging artifacts. This lesson focuses on Reverberation, Shadowing, and Enhancement.',
-    features: ['Interactive Reverberation/Comet-Tail', 'Shadowing vs. Enhancement Demo', 'Edge Shadowing Simulation', 'Clinical Scenario Artifact Quiz'],
+    features: ['Interactive Reverberation Logic', 'Attenuation Artifact Mapping', 'Corrective Maneuver Training'],
   },
     {
     id: 'advanced_artifacts',
@@ -70,7 +68,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🌌',
     title: 'Advanced Artifacts',
     description: 'Go beyond the basics to identify and understand more complex artifacts like Mirror Image, Side/Grating Lobes, and Speed Error artifacts.',
-    features: ['Mirror Image Simulation', 'Side Lobe Artifact Demo', 'Speed Error Misregistration'],
+    features: ['Mirror Image Ray-Tracing', 'Side Lobe Energy Maps', 'Speed Error Misregistration Lab'],
   },
   {
     id: 'harmonics',
@@ -79,10 +77,9 @@ export const COURSE_MODULES: CourseModuleData[] = [
     title: 'Harmonic Imaging',
     description: 'Learn how nonlinear wave propagation creates harmonic frequencies and how this is used to dramatically improve image quality by reducing artifacts.',
     features: [
-      'Interactive nonlinear wave distortion',
-      'Real-time frequency spectrum analysis',
-      'Fundamental vs. Harmonic image comparison',
-      'Visualize near-field artifact reduction'
+      'Nonlinear Propagation Waveforms',
+      'Harmonic Advantage Comparison',
+      'Spectrum Analysis HUD'
     ],
   },
   {
@@ -91,7 +88,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🧱',
     title: 'Advanced Mode: Elastography',
     description: 'Go beyond grayscale and learn how to image tissue stiffness. This module covers the physics of strain and shear wave elastography and their clinical applications.',
-    features: ['Strain vs. Shear Wave Physics', 'Interactive ARFI Pulse Demo', 'Quantitative Stiffness Maps', 'Clinical Simulation: Liver Fibrosis'],
+    features: ['Strain vs. Shear Wave Simulation', 'ARFI Pulse Kinetic Tracking', 'Liver Fibrosis Staging Matrix'],
   },
   {
     id: 'contrast_agents',
@@ -99,7 +96,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '✨',
     title: 'Contrast Agents & Microbubbles',
     description: 'Explore the physics of microbubble contrast agents. Learn how they enhance signals, respond to acoustic pressure, and enable advanced imaging techniques.',
-    features: ['Microbubble Oscillation Physics', 'MI and Bubble Disruption', 'Contrast Harmonic Imaging (CHI)', 'Clinical Applications'],
+    features: ['Harmonic Bubble Resonance', 'Microbubble Disruption Lab', 'Clinical Phase Simulation'],
   },
   {
     id: '3d_4d',
@@ -107,7 +104,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🧊',
     title: '3D/4D Imaging',
     description: 'Explore the technology behind creating three-dimensional volumes and real-time 4D imaging. Understand data acquisition, volume rendering, and clinical applications.',
-    features: ['3D Data Acquisition Sweep', 'Interactive Volume Rendering', '4D Real-Time Simulation'],
+    features: ['3D Volumetric Ray-Casting', 'MPR Orthogonal Slicing', 'Real-Time 4D Rendering'],
   },
   {
     id: 'hemodynamics',
@@ -115,7 +112,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '❤️',
     title: 'Hemodynamics',
     description: 'Study blood flow dynamics with beautiful fluid simulations and vessel compliance demonstrations.',
-    features: ['Blood flow visualizations', 'Vessel elasticity models', 'Pressure-flow relationships'],
+    features: ['Laminar vs Turbulent Dynamics', 'Bernoulli Pressure Calculus', 'Poiseuille’s Flow Lab'],
   },
   {
     id: 'safety',
@@ -123,7 +120,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🛡️',
     title: 'Bioeffects and Safety',
     description: 'A hands-on simulator for understanding ALARA, TI, and MI. Learn to manage patient safety in real-time with an interactive control panel and clinical scenarios.',
-    features: ['Interactive ALARA Dashboard', 'Thermal & Mechanical Effect Animations', 'Real-time TI & MI Calculation', 'Clinical Safety Scenarios'],
+    features: ['Cavitation Threshold Lab', 'Thermal Absorption Simulation', 'SPTA Intensity HUD'],
   },
   {
     id: 'biomedical_physics',
@@ -131,7 +128,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🔬',
     title: 'Biomedical Physics & Bio-instrumentation',
     description: 'A deeper look at the fundamental interactions between ultrasound and biological tissues, including advanced concepts in attenuation, scattering, and impedance.',
-    features: ['Tissue Impedance Mismatch Lab', 'Interactive Attenuation Spectrum', 'Rayleigh Scattering Simulation'],
+    features: ['Rayleigh Scattering Kinetic Lab', 'Tissue Impedance Mismatch Lab', 'Signal Chain Architecture'],
   },
   {
     id: 'abdominal',
@@ -139,7 +136,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🏥',
     title: 'Clinical Application: Abdominal',
     description: 'Apply your physics knowledge to abdominal scanning. This module covers key protocols, anatomy, and common measurements like the Renal Resistive Index (RI).',
-    features: ['Liver Segmentation Guide', 'Interactive Gallbladder Protocol', 'Renal RI Calculation Lab'],
+    features: ['Anatomy Mapping Protocol', 'Pathology Detection Training', 'Renal RI Calculation Lab'],
   },
   {
     id: 'cardiac',
@@ -147,15 +144,15 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🫀',
     title: 'Clinical Application: Cardiac',
     description: 'An introduction to echocardiography, covering cardiac anatomy, standard imaging windows, and fundamental measurements like Ejection Fraction.',
-    features: ['Interactive 4-Chamber Anatomy', 'Ejection Fraction (EF) Lab'],
+    features: ['M-Mode Motion Analysis', 'Pulsatile Cardiac Rhythms'],
   },
   {
     id: 'vascular',
     status: 'Clinical',
     icon: '🩸',
     title: 'Clinical Application: Vascular',
-    description: 'Master the essentials of vascular ultrasound, from measuring carotid stenosis and identifying DVT to understanding the Ankle-Brachial Index (ABI).',
-    features: ['Carotid Stenosis Measurement Lab', 'DVT Compression Simulation', 'Interactive ABI Walkthrough'],
+    description: 'Master the basics of vascular ultrasound, from carotid stenosis grading to venous insufficiency testing.',
+    features: ['Carotid Stenosis Pulse Lab', 'DVT Compression Maneuver', 'Ankle-Brachial Index (ABI)'],
   },
   {
     id: 'msk',
@@ -163,7 +160,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '💪',
     title: 'Clinical Application: MSK',
     description: 'Explore the dynamic world of Musculoskeletal (MSK) ultrasound. Learn about the critical concept of anisotropy, tendon pathology, and dynamic imaging techniques.',
-    features: ['Anisotropy Explained Interactively', 'Tendon Tear Pathology Simulation', 'Dynamic Impingement Test'],
+    features: ['Anisotropy Angular Physics', 'Tendon Pathology Simulation', 'Dynamic Joint Tracking'],
   },
   {
     id: 'clinical_case_simulator',
@@ -171,7 +168,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🧑‍⚕️',
     title: 'AI Clinical Case Simulator',
     description: 'Apply your physics knowledge in a real-world diagnostic challenge. Interact with an AI-powered patient case, generate ultrasound images, and make a diagnosis.',
-    features: ['AI-Generated Patient Scenarios', 'On-Demand Image Generation', 'Interactive Diagnostic Reporting', 'Personalized AI Feedback'],
+    features: ['Neural Patient Ingest', 'Synthesized Image Buffer', 'AI Diagnostic Verification'],
   },
   {
     id: 'ai_academy',
@@ -179,7 +176,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🏛️',
     title: 'AI Tactical Academy',
     description: 'Generate on-demand high-fidelity lectures on any ultrasound physics concept. Features neural-audio briefings and structured conceptual extraction.',
-    features: ['Procedural Lecture Generation', 'Mission Briefing Audio', 'Deep Dive Technical Notes', 'Clinical Relevance Analysis'],
+    features: ['Procedural Briefing Generation', 'Mission Briefing Audio', 'Deep Dive Signal Extraction'],
   },
    {
     id: 'processing',
@@ -188,10 +185,9 @@ export const COURSE_MODULES: CourseModuleData[] = [
     title: 'Preprocessing vs. Postprocessing',
     description: 'Understand the critical difference between manipulating live data (preprocessing) and stored data (postprocessing) with this interactive console.',
     features: [
-      'Interactive Freeze/Unfreeze simulation',
-      'Live Preprocessing controls (Gain, DR)',
-      'Postprocessing on stored data (Zoom, Maps)',
-      'Key differences clearly explained'
+      'Interactive Freeze Buffer',
+      'Live Signal Chain Controls',
+      'Destructive vs Reversible Data'
     ],
   },
   {
@@ -201,10 +197,9 @@ export const COURSE_MODULES: CourseModuleData[] = [
     title: 'Time Gain Compensation (TGC)',
     description: 'A deep dive into TGC. Learn how we compensate for attenuation, ensures uniform image brightness, and improves diagnostic accuracy through an interactive simulation.',
     features: [
-      'Interactive TGC slider controls',
-      'Real-time image brightness feedback',
-      'Detailed explanation of TGC principles',
-      'Side-by-side compensated vs. uncompensated view'
+      'Gain Channel Stack Control',
+      'Depth Compensation Mapping',
+      'Signal Uniformity Calibration'
     ],
   },
   {
@@ -214,10 +209,9 @@ export const COURSE_MODULES: CourseModuleData[] = [
     title: 'Dynamic Range & Compression',
     description: 'Learn how adjusting the dynamic range affects contrast resolution. This interactive demo shows how to display a wider or narrower range of gray shades.',
     features: [
-      'Interactive Dynamic Range slider',
-      'Live compression curve visualization',
-      'Real-time effect on image contrast',
-      'Explanation of clinical impact'
+      'Compression Intensity Slider',
+      'Gray Scale Contrast Lab',
+      'Signal Map Decibel Control'
     ],
   },
   {
@@ -226,7 +220,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '✅',
     title: 'Quality Assurance',
     description: 'Master QA procedures with step-by-step equipment testing protocols and measurement technique guides.',
-    features: ['QA testing procedures', 'Measurement protocols', 'Performance standards'],
+    features: ['Registration Accuracy Phantom', 'Resolution Target Sweep', 'System Uniformity Audit'],
   },
   {
     id: 'study_guide',
@@ -234,7 +228,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '📖',
     title: 'SPI Study Guide & Glossary',
     description: 'A comprehensive study guide covering all core concepts of ultrasound physics, plus an interactive quiz and a detailed glossary of key terms.',
-    features: ['Detailed Study Guide', 'Interactive Quiz', '200+ Interactive Flashcards', 'AI-Powered Study Tools', 'Comprehensive Glossary'],
+    features: ['Intelligence Database', 'Memory Node Training', 'Rapid Assessment Portal'],
   },
   {
     id: 'jeopardy',
@@ -242,7 +236,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '🕹️',
     title: 'SPI Jeopardy Challenge',
     description: 'Test your knowledge across core ultrasound physics topics in a fun, competitive Jeopardy-style game. Features 5 categories and 50 questions.',
-    features: ['5 Categories', '50 Questions', 'Scoring & Stats', 'Based on SPI curriculum'],
+    features: ['Retrieval Grid Difficulty', 'Sector Sync Scoring', 'Diagnostic Target HUD'],
   },
   {
     id: 'spi_mock_exam',
@@ -250,7 +244,7 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '⏱️',
     title: 'SPI Mock Exam',
     description: 'A realistic, full-length mock exam to test your knowledge under pressure. Built to simulate the official Sonography Principles & Instrumentation exam.',
-    features: ['110 Multiple Choice Questions', '2 Hour Timed Environment', 'Detailed Answer Explanations', 'Performance Tracking'],
+    features: ['Full Examination Sync', 'Temporal Pressure Lab', 'Neural Performance Review'],
   },
   {
     id: 'ai_history',
@@ -258,6 +252,6 @@ export const COURSE_MODULES: CourseModuleData[] = [
     icon: '💾',
     title: 'AI Content History',
     description: 'A log of all content generated by EchoBot and other AI features. All generated study plans, flashcards, and feedback are automatically saved here for your review.',
-    features: ['Automatic saving', 'Chronological log', 'View all AI content'],
+    features: ['Buffer Archive Saving', 'Chronological Uplink Log', 'Historical Data Retrieval'],
   },
 ];

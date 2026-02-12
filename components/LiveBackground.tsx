@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,6 +44,40 @@ const SpaceShip: React.FC<{ color?: string; type?: 'scout' | 'fighter' }> = ({ c
                     <stop offset="100%" stopColor="transparent" stopOpacity="0" />
                 </linearGradient>
             </defs>
+        </svg>
+    </div>
+);
+
+const Mothership: React.FC = () => (
+    <div className="w-full h-full relative opacity-40 grayscale group-hover:grayscale-0 transition-all duration-1000">
+        <svg viewBox="0 0 400 150" className="w-full h-full drop-shadow-[0_0_50px_rgba(0,0,0,1)]">
+            <defs>
+                <linearGradient id="hullGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#222" />
+                    <stop offset="50%" stopColor="#111" />
+                    <stop offset="100%" stopColor="#050505" />
+                </linearGradient>
+            </defs>
+            {/* Main Spine */}
+            <rect x="50" y="60" width="300" height="30" fill="url(#hullGrad)" stroke="#444" strokeWidth="1" rx="4" />
+            {/* Rear Engines */}
+            <rect x="20" y="40" width="40" height="70" fill="#151515" stroke="#444" rx="5" />
+            <motion.rect x="10" y="45" width="10" height="20" fill="cyan" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.1, repeat: Infinity }} />
+            <motion.rect x="10" y="85" width="10" height="20" fill="cyan" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.1, repeat: Infinity, delay: 0.05 }} />
+            {/* Hangar Deck */}
+            <rect x="120" y="85" width="160" height="15" fill="#000" stroke="#333" rx="2" />
+            {/* Tower */}
+            <rect x="260" y="30" width="40" height="30" fill="#1a1a1a" stroke="#444" rx="2" />
+            {/* Signal Lights */}
+            {[100, 150, 200, 250, 300].map((x, i) => (
+                <motion.circle 
+                    key={i} 
+                    cx={x} cy="75" r="2" 
+                    fill="red" 
+                    animate={{ opacity: [0, 1, 0] }} 
+                    transition={{ duration: 2, delay: i * 0.4, repeat: Infinity }} 
+                />
+            ))}
         </svg>
     </div>
 );
@@ -115,6 +148,52 @@ const Alien: React.FC = () => (
     </div>
 );
 
+const Rift: React.FC = () => (
+    <motion.div 
+        className="relative w-full h-full"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: [0, 1.2, 0.8, 0], opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 3, ease: "easeInOut" }}
+    >
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+            <motion.path 
+                d="M 10 50 L 50 10 L 90 50 L 50 90 Z" 
+                fill="none" 
+                stroke="white" 
+                strokeWidth="0.5"
+                animate={{ rotate: 180 }}
+                transition={{ duration: 3 }}
+            />
+            <motion.path 
+                d="M 20 50 L 50 20 L 80 50 L 50 80 Z" 
+                fill="none" 
+                stroke="cyan" 
+                strokeWidth="2"
+                animate={{ rotate: -180, scale: [1, 1.5, 1] }}
+                transition={{ duration: 3 }}
+            />
+            <div className="absolute inset-0 bg-cyan-500 blur-3xl opacity-20" />
+        </svg>
+    </motion.div>
+);
+
+const TelemetryProbe: React.FC = () => (
+    <div className="relative w-full h-full">
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="4" fill="white" />
+            <motion.circle 
+                cx="50" cy="50" r="20" 
+                fill="none" 
+                stroke="white" 
+                strokeWidth="0.5" 
+                animate={{ scale: [1, 3], opacity: [0.6, 0] }} 
+                transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <text x="60" y="45" fill="white" fontSize="8" fontStyle="italic" opacity="0.4" className="font-mono">SAT_SYNC_04</text>
+        </svg>
+    </div>
+);
+
 const LaserBeam: React.FC<{ color: string; isLeft: boolean }> = ({ color, isLeft }) => (
     <motion.div
         className="absolute w-12 h-1 rounded-full z-30"
@@ -171,7 +250,7 @@ const Nebula: React.FC<{ color: string, size: string, delay: number }> = ({ colo
 
 interface Entity {
     id: string;
-    type: 'ship' | 'alien' | 'shootingStar' | 'dogfight';
+    type: 'ship' | 'alien' | 'shootingStar' | 'dogfight' | 'mothership' | 'rift' | 'probe' | 'debris';
     x: number;
     y: number;
     scale: number;
@@ -201,7 +280,37 @@ const LiveBackground: React.FC = () => {
             
             let newEntity: Entity;
 
-            if (seed > 0.7) {
+            if (seed > 0.95) {
+                // Rare Dreadnought Mothership
+                newEntity = {
+                    id,
+                    type: 'mothership',
+                    x: -100,
+                    y: Math.random() * 40 + 10,
+                    scale: 1,
+                    duration: 60,
+                };
+            } else if (seed > 0.88) {
+                // Warp Rift
+                newEntity = {
+                    id,
+                    type: 'rift',
+                    x: Math.random() * 80 + 10,
+                    y: Math.random() * 80 + 10,
+                    scale: Math.random() * 0.5 + 1,
+                    duration: 3,
+                };
+            } else if (seed > 0.80) {
+                // Telemetry Probe
+                newEntity = {
+                    id,
+                    type: 'probe',
+                    x: Math.random() * 90 + 5,
+                    y: Math.random() * 90 + 5,
+                    scale: 0.5,
+                    duration: 10,
+                };
+            } else if (seed > 0.65) {
                 // Dogfight Scenario
                 newEntity = {
                     id,
@@ -213,7 +322,7 @@ const LiveBackground: React.FC = () => {
                     color: Math.random() > 0.5 ? '#ff0099' : '#00f3ff'
                 };
             } else if (seed > 0.4) {
-                // Cartoon Alien
+                // Bio-interceptor Alien
                 newEntity = {
                     id,
                     type: 'alien',
@@ -223,7 +332,7 @@ const LiveBackground: React.FC = () => {
                     duration: Math.random() * 20 + 15,
                     rotation: Math.random() * 360
                 };
-            } else if (seed > 0.1) {
+            } else if (seed > 0.15) {
                 // Regular Scout Ship
                 newEntity = {
                     id,
@@ -233,6 +342,16 @@ const LiveBackground: React.FC = () => {
                     scale: Math.random() * 0.3 + 0.4,
                     duration: Math.random() * 15 + 15,
                     rotation: Math.random() * 20 - 10
+                };
+            } else if (seed > 0.05) {
+                // Hyperspace Debris
+                newEntity = {
+                    id,
+                    type: 'debris',
+                    x: -10,
+                    y: Math.random() * 100,
+                    scale: Math.random() * 0.1 + 0.1,
+                    duration: Math.random() * 2 + 1,
                 };
             } else {
                 // Shooting Star
@@ -250,10 +369,10 @@ const LiveBackground: React.FC = () => {
 
             setTimeout(() => {
                 setEntities(prev => prev.filter(e => e.id !== id));
-            }, 30000);
+            }, 61000);
         };
 
-        const interval = setInterval(spawn, 2500); 
+        const interval = setInterval(spawn, 1500); 
         spawn();
         return () => clearInterval(interval);
     }, []);
@@ -293,6 +412,50 @@ const LiveBackground: React.FC = () => {
                 {entities.map(entity => {
                     if (entity.type === 'shootingStar') {
                         return <ShootingStar key={entity.id} startX={entity.x} startY={entity.y} />;
+                    }
+
+                    if (entity.type === 'rift') {
+                        return (
+                            <div key={entity.id} className="absolute" style={{ left: `${entity.x}vw`, top: `${entity.y}vh`, width: 150 * entity.scale, height: 150 * entity.scale }}>
+                                <Rift />
+                            </div>
+                        );
+                    }
+
+                    if (entity.type === 'probe') {
+                        return (
+                            <motion.div key={entity.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute" style={{ left: `${entity.x}vw`, top: `${entity.y}vh`, width: 60, height: 60 }}>
+                                <TelemetryProbe />
+                            </motion.div>
+                        );
+                    }
+
+                    if (entity.type === 'mothership') {
+                        return (
+                            <motion.div
+                                key={entity.id}
+                                className="absolute z-15"
+                                initial={{ left: '-60vw', top: `${entity.y}vh` }}
+                                animate={{ left: '120vw' }}
+                                transition={{ duration: entity.duration, ease: "linear" }}
+                                style={{ width: '40vw', height: '15vh' }}
+                            >
+                                <Mothership />
+                            </motion.div>
+                        );
+                    }
+
+                    if (entity.type === 'debris') {
+                        return (
+                            <motion.div
+                                key={entity.id}
+                                className="absolute bg-white/20 blur-[1px] rounded-full"
+                                initial={{ left: '-5vw', top: `${entity.y}vh`, scale: entity.scale }}
+                                animate={{ left: '105vw' }}
+                                transition={{ duration: entity.duration, ease: "linear" }}
+                                style={{ width: 40, height: 1 }}
+                            />
+                        );
                     }
 
                     if (entity.type === 'alien') {
