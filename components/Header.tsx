@@ -180,17 +180,52 @@ const Header: React.FC<HeaderProps> = ({ userProfile, onResetProgress, onDashboa
                                             <p className="text-[10px] font-black text-white uppercase tracking-widest italic">Sonic_Chain</p>
                                         </div>
                                         <div className="space-y-4">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-bold text-white/50 uppercase">Atmosphere</span>
-                                                <button onClick={() => setMusicEnabled(!settings.musicEnabled)} className={`w-8 h-4 rounded-full relative ${settings.musicEnabled ? 'bg-cyan-500' : 'bg-white/10'}`}>
-                                                    <motion.div className="absolute top-0.5 w-3 h-3 bg-white rounded-full" animate={{ left: settings.musicEnabled ? '18px' : '2px' }} />
-                                                </button>
+                                            {/* Music Controls */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[9px] font-bold text-white/50 uppercase">Atmosphere</span>
+                                                    <button onClick={() => setMusicEnabled(!settings.musicEnabled)} className={`w-8 h-4 rounded-full relative ${settings.musicEnabled ? 'bg-cyan-500' : 'bg-white/10'}`}>
+                                                        <motion.div className="absolute top-0.5 w-3 h-3 bg-white rounded-full" animate={{ left: settings.musicEnabled ? '18px' : '2px' }} />
+                                                    </button>
+                                                </div>
+                                                {settings.musicEnabled && (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[8px] text-white/30">VOL</span>
+                                                        <input 
+                                                            type="range" 
+                                                            min="0" 
+                                                            max="1" 
+                                                            step="0.05" 
+                                                            value={settings.musicVolume} 
+                                                            onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                                                            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-bold text-white/50 uppercase">Interface</span>
-                                                <button onClick={() => setSoundEnabled(!settings.soundEnabled)} className={`w-8 h-4 rounded-full relative ${settings.soundEnabled ? 'bg-[var(--gold)]' : 'bg-white/10'}`}>
-                                                    <motion.div className="absolute top-0.5 w-3 h-3 bg-white rounded-full" animate={{ left: settings.soundEnabled ? '18px' : '2px' }} />
-                                                </button>
+
+                                            {/* SFX Controls */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[9px] font-bold text-white/50 uppercase">Interface</span>
+                                                    <button onClick={() => setSoundEnabled(!settings.soundEnabled)} className={`w-8 h-4 rounded-full relative ${settings.soundEnabled ? 'bg-[var(--gold)]' : 'bg-white/10'}`}>
+                                                        <motion.div className="absolute top-0.5 w-3 h-3 bg-white rounded-full" animate={{ left: settings.soundEnabled ? '18px' : '2px' }} />
+                                                    </button>
+                                                </div>
+                                                {settings.soundEnabled && (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[8px] text-white/30">SFX</span>
+                                                        <input 
+                                                            type="range" 
+                                                            min="0" 
+                                                            max="1" 
+                                                            step="0.05" 
+                                                            value={settings.volume} 
+                                                            onChange={(e) => setVolume(parseFloat(e.target.value))}
+                                                            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--gold)] hover:accent-yellow-400"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>
