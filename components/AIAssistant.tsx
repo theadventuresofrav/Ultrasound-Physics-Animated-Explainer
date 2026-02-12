@@ -55,14 +55,23 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ activeModule }) => {
   const chatRef = useRef<Chat | null>(null);
 
   useEffect(() => {
-    const moduleContent = getModuleContent(activeModule);
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-    chatRef.current = ai.chats.create({
-      model: 'gemini-3-flash-preview',
-      config: { 
-          systemInstruction: `You are EchoBot, an elite ultrasound physics AI. Precise, professional, encouraging. Context: ${moduleContent}`
-      },
-    });
+    try {
+        const moduleContent = getModuleContent(activeModule);
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            console.warn("EchoBot: No API Key found. AI features disabled.");
+            return;
+        }
+        const ai = new GoogleGenAI({ apiKey });
+        chatRef.current = ai.chats.create({
+          model: 'gemini-3-flash-preview',
+          config: { 
+              systemInstruction: `You are EchoBot, an elite ultrasound physics AI. Precise, professional, encouraging. Context: ${moduleContent}`
+          },
+        });
+    } catch (error) {
+        console.error("EchoBot initialization failed:", error);
+    }
   }, [activeModule]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [history, isLoading, isOpen]);

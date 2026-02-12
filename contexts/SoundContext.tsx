@@ -3,6 +3,7 @@ import { useSettings } from './SettingsContext';
 import { useUser } from './UserContext';
 import { supabase } from '../lib/supabaseClient';
 import { decode, decodeAudioData } from '../utils/audio';
+import { generateQwenTTS } from '../utils/qwen';
 import { GoogleGenAI, Modality } from '@google/genai';
 
 interface QueuedNarration {
@@ -57,6 +58,12 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [narrationQueue, setNarrationQueue] = useState<QueuedNarration[]>([]);
     const isProcessingRef = useRef(false);
 
+    // Theme Music Refs
+    const themeMusicSourceRef = useRef<AudioBufferSourceNode | null>(null);
+    const themeOscillatorsRef = useRef<OscillatorNode[]>([]); // Track oscillators for procedural sound
+    const themeMusicGainRef = useRef<GainNode | null>(null);
+    const { userProfile } = useUser();
+
     const initAudioContext = useCallback(() => {
         if (!audioContextRef.current) {
             const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -100,7 +107,19 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         
         return new Promise(async (resolve) => {
             try {
-                const audioBuffer = await decodeAudioData(decode(base64Audio), ctx, 24000, 1);
+                const uint8Array = decode(base64Audio);
+                let audioBuffer: AudioBuffer;
+
+                try {
+                    // Try native decoding first (for MP3/WAV from Qwen)
+                    // We need to copy the buffer because decodeAudioData detaches it
+                    const bufferCopy = uint8Array.slice(0).buffer;
+                    audioBuffer = await ctx.decodeAudioData(bufferCopy);
+                } catch (e) {
+                    // Fallback to custom PCM decoding (for Gemini)
+                    audioBuffer = await decodeAudioData(uint8Array, ctx, 24000, 1);
+                }
+
                 const source = ctx.createBufferSource();
                 source.buffer = audioBuffer;
                 
@@ -146,6 +165,206 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return null;
     }, []);
 
+    // Theme Music Effect
+    useEffect(() => {
+        const playThemeMusic = async () => {
+            // Cleanup previous audio sources
+            if (themeMusicSourceRef.current) {
+                try { themeMusicSourceRef.current.stop(); } catch(e){}
+                themeMusicSourceRef.current = null;
+            }
+            // Cleanup procedural oscillators
+            themeOscillatorsRef.current.forEach(osc => {
+                try { osc.stop(); osc.disconnect(); } catch(e){}
+            });
+            themeOscillatorsRef.current = [];
+
+            // Check if music is enabled
+            if (!settings.musicEnabled) return;
+
+            const ctx = initAudioContext();
+            if (!ctx) return;
+
+            const masterGain = ctx.createGain();
+            const volume = settings.musicVolume > 0 ? settings.musicVolume : 0.5;
+            masterGain.gain.value = volume;
+            masterGain.connect(ctx.destination);
+            themeMusicGainRef.current = masterGain;
+
+            // STRATEGY: 
+            // 1. Try User's Custom Override
+            // 2. Try GLOBAL BROADCAST (System-wide music)
+            // 3. Fallback to Procedural Drone
+            
+            let musicKeyToPlay = userProfile?.systemOverrides?.themeMusicKey;
+            let playedCustom = false;
+            
+            // If user has no personal override, check for global broadcast
+             if (!musicKeyToPlay) {
+                 musicKeyToPlay = 'GLOBAL_BROADCAST_SIGNAL';
+             }
+
+             // SPECIAL BYPASS: If Global Broadcast, try to load from /background-music.mp3 first
+             // This bypasses the database entirely and uses the file in the public/ folder.
+             if (musicKeyToPlay === 'GLOBAL_BROADCAST_SIGNAL') {
+                 try {
+                     const response = await fetch('/background-music.mp3');
+                     if (response.ok) {
+                         console.log("Found local static background music file!");
+                         const arrayBuffer = await response.arrayBuffer();
+                         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                         
+                         const source = ctx.createBufferSource();
+                         source.buffer = audioBuffer;
+                         source.loop = true;
+                         source.connect(masterGain);
+                         themeMusicSourceRef.current = source;
+                         source.start();
+                         return; // Exit early, we are playing!
+                     }
+                 } catch (e) {
+                     console.log("No static /background-music.mp3 found, checking database...");
+                 }
+             }
+
+             if (musicKeyToPlay) {
+                 try {
+                     let base64Data: string | null = null;
+
+                     // 1. Try fetching from Supabase
+                     const { data, error } = await supabase.from('audio_cache').select('audio_base64').eq('id', musicKeyToPlay).single();
+                     
+                     // If we tried global and it failed (404), that's fine, just fall through.
+                     if (!data && musicKeyToPlay === 'GLOBAL_BROADCAST_SIGNAL') {
+                         console.log("No global broadcast signal found.");
+                     } else if (data?.audio_base64) {
+                         base64Data = data.audio_base64;
+                     }
+                     
+                     // 2. Fallback: Try LocalStorage (only if NOT global)
+                     if (!base64Data && musicKeyToPlay !== 'GLOBAL_BROADCAST_SIGNAL') {
+                          const localData = localStorage.getItem(musicKeyToPlay);
+                          if (localData) base64Data = localData;
+                     }
+
+                     if (base64Data) {
+                         // CHECK FOR CHUNKED MANIFEST
+                         if (base64Data.startsWith('CHUNKED_MANIFEST:')) {
+                                const totalChunks = parseInt(base64Data.split(':')[1]);
+                                console.log(`Detected Chunked Audio (${totalChunks} parts). Reassembling...`);
+                                
+                                const chunkPromises = [];
+                                for (let i = 0; i < totalChunks; i++) {
+                                    chunkPromises.push(
+                                        supabase.from('audio_cache').select('audio_base64').eq('id', `${musicKeyToPlay}_part_${i}`).single()
+                                    );
+                                }
+                                
+                                const chunkResults = await Promise.all(chunkPromises);
+                                base64Data = chunkResults.map(r => r.data?.audio_base64 || '').join('');
+                         } else if (base64Data.includes(',')) {
+                             base64Data = base64Data.split(',')[1];
+                         }
+
+                         const uint8Array = decode(base64Data);
+                        let audioBuffer: AudioBuffer;
+
+                        try {
+                            const bufferCopy = uint8Array.slice(0).buffer;
+                            audioBuffer = await ctx.decodeAudioData(bufferCopy);
+                        } catch (e) {
+                            audioBuffer = await decodeAudioData(uint8Array, ctx, 24000, 1);
+                        }
+
+                        const source = ctx.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.loop = true;
+                        source.connect(masterGain);
+                        themeMusicSourceRef.current = source;
+                        source.start();
+                        playedCustom = true;
+                        console.log("Playing theme music:", musicKeyToPlay);
+                    }
+                } catch (e) {
+                    console.error("Failed to load music:", e);
+                }
+            }
+
+            // Fallback: Procedural Space Drone (Gentle Ethereal)
+            if (!playedCustom) {
+                console.log("Generating gentle space drone...");
+                // Frequencies: Lower and softer (Open Fifths: C2, G2, C3)
+                const freqs = [65.41, 98.00, 130.81]; 
+                
+                // Create a "Warmth" Filter (Lowpass) to remove harshness
+                const filter = ctx.createBiquadFilter();
+                filter.type = "lowpass";
+                filter.frequency.value = 800; // Cut off anything above 800Hz
+                filter.connect(masterGain);
+
+                const oscillators = freqs.map((f, i) => {
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sine'; // All Sine waves for purity
+                    osc.frequency.value = f;
+                    
+                    // Gentle detune for "floating" feel
+                    osc.detune.value = (Math.random() * 4) - 2; 
+
+                    // Individual gain - much quieter now
+                    const oscGain = ctx.createGain();
+                    oscGain.gain.value = 0.03; // Very low volume for background ambience
+                    
+                    // Add a slow "breathing" effect (LFO) to the volume of one oscillator
+                    if (i === 1) {
+                         const lfo = ctx.createOscillator();
+                         lfo.type = 'sine';
+                         lfo.frequency.value = 0.1; // Very slow cycle (10 seconds)
+                         const lfoGain = ctx.createGain();
+                         lfoGain.gain.value = 0.01; // Modulate volume slightly
+                         lfo.connect(lfoGain);
+                         lfoGain.connect(oscGain.gain);
+                         lfo.start();
+                         // We track the LFO to stop it later? 
+                         // For simplicity in this structure, we'll just let the LFO run attached to the node 
+                         // (it gets GC'd when graph is disconnected, but cleaner to track. 
+                         // Given the complexity, a simple static drone is safer for now without extra refs.)
+                         // Let's stick to static gain for stability, but softer.
+                    }
+
+                    osc.connect(oscGain);
+                    oscGain.connect(filter); // Connect to filter instead of master directly
+                    osc.start();
+                    return osc;
+                });
+                
+                themeOscillatorsRef.current = oscillators;
+            }
+        };
+
+        // Delay start slightly to ensure user interaction has occurred
+        const timer = setTimeout(() => {
+             playThemeMusic();
+        }, 1000);
+
+        return () => {
+            clearTimeout(timer);
+            if (themeMusicSourceRef.current) {
+                try { themeMusicSourceRef.current.stop(); } catch(e){}
+            }
+            themeOscillatorsRef.current.forEach(osc => {
+                try { osc.stop(); osc.disconnect(); } catch(e){}
+            });
+            themeOscillatorsRef.current = [];
+        };
+    }, [settings.musicEnabled, userProfile?.systemOverrides?.themeMusicKey, initAudioContext]); // Re-run if enabled changes or key changes
+
+    // Update Music Volume
+    useEffect(() => {
+        if (themeMusicGainRef.current && audioContextRef.current) {
+            themeMusicGainRef.current.gain.setTargetAtTime(settings.musicVolume, audioContextRef.current.currentTime, 0.1);
+        }
+    }, [settings.musicVolume]);
+
     useEffect(() => {
         const processQueue = async () => {
             if (isProcessingRef.current || narrationQueue.length === 0) return;
@@ -163,18 +382,29 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 if (!isQuotaExhausted) {
                     setBriefingStatus("NEURAL_SYNC...");
                     try {
-                        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-                        const speakerText = `Narrate the following text naturally as if you are giving a live, professional speech. CRITICAL: Do NOT say "Step 1", "Point 2", "Title", or use any bullet point labels or numbers. Just speak the information fluently: ${current.text}`;
+                        // Check for Qwen Key
+                        const qwenKey = (import.meta as any).env?.VITE_DASHSCOPE_API_KEY || (process.env as any).VITE_DASHSCOPE_API_KEY;
                         
-                        const response = await ai.models.generateContent({
-                            model: "gemini-2.5-flash-preview-tts",
-                            contents: [{ parts: [{ text: speakerText }] }],
-                            config: {
-                                responseModalities: [Modality.AUDIO],
-                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' }}},
-                            },
-                        });
-                        audioToPlay = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+                        if (qwenKey) {
+                            audioToPlay = await generateQwenTTS(current.text, qwenKey);
+                        }
+
+                        // If Qwen didn't run or return audio, use Gemini
+                        if (!audioToPlay) {
+                            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+                            const speakerText = `Narrate the following text naturally as if you are giving a live, professional speech. CRITICAL: Do NOT say "Step 1", "Point 2", "Title", or use any bullet point labels or numbers. Just speak the information fluently: ${current.text}`;
+                            
+                            const response = await ai.models.generateContent({
+                                model: "gemini-2.5-flash-preview-tts",
+                                contents: [{ parts: [{ text: speakerText }] }],
+                                config: {
+                                    responseModalities: [Modality.AUDIO],
+                                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' }}},
+                                },
+                            });
+                            audioToPlay = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+                        }
+
                         if (audioToPlay) {
                             localStorage.setItem(cacheKey, audioToPlay);
                             await supabase.from('audio_cache').upsert({ id: cacheKey, audio_base64: audioToPlay, created_at: new Date().toISOString() });

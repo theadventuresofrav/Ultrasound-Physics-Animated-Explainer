@@ -49,7 +49,7 @@ const SECTORS = [
 ];
 
 const LearningDashboard: React.FC<{ onModuleClick: (moduleId: DemoId) => void; userProfile: UserProfile | null }> = ({ onModuleClick, userProfile }) => {
-    const { setStudyPath, deleteMnemonic, isSyncing } = useUser();
+    const { setStudyPath, deleteMnemonic, isSyncing, toggleAdmin } = useUser();
     const [activeFilter, setActiveFilter] = useState<FilterType>('All');
     const [showIntake, setShowIntake] = useState(false);
     const [pathAnimation, setPathAnimation] = useState(false);

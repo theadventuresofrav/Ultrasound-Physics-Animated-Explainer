@@ -428,7 +428,7 @@ const DutyFactorHUD: React.FC = () => {
                     </div>
                 </div>
             </div>
-        </DutyFactorHUD>
+        </DemoSection>
     );
 };
 

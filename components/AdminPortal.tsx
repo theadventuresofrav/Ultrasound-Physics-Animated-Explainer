@@ -29,6 +29,7 @@ const AdminPortal: React.FC = () => {
     const [customMedia, setCustomMedia] = useState<SimulationMedium[]>(userProfile?.systemOverrides?.customMedia || []);
     const [systemLogo, setSystemLogo] = useState<string | undefined>(userProfile?.systemOverrides?.systemLogo);
     const [themeMusicKey, setThemeMusicKey] = useState<string | undefined>(userProfile?.systemOverrides?.themeMusicKey);
+    const [isGlobalBroadcast, setIsGlobalBroadcast] = useState(true); // Default to true so uploads are global
 
     useEffect(() => {
         if (statusMessage) {
@@ -106,15 +107,98 @@ const AdminPortal: React.FC = () => {
     const handleThemeMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setStatusMessage({ text: "UPLINKING_THEME_SIGNAL...", type: 'success' });
+        
+        // Reset input value so same file can be selected again if needed
+        e.target.value = '';
+        
+        const signalText = isGlobalBroadcast ? "GLOBAL_BROADCAST" : "LOCAL_OVERRIDE";
+        setStatusMessage({ text: `UPLINKING_${signalText}_SIGNAL...`, type: 'success' });
+        
         try {
             const base64 = await toBase64(file);
-            const key = `theme_music_${Date.now()}`;
-            await supabase.from('audio_cache').upsert({ id: key, audio_base64: base64, created_at: new Date().toISOString() });
+            
+            // If Global, use fixed ID. If Local, use timestamp.
+            const key = isGlobalBroadcast ? "GLOBAL_BROADCAST_SIGNAL" : `theme_music_${Date.now()}`;
+            
+            console.log(`Uploading theme music (${signalText}):`, file.name);
+            
+            try {
+                // Try Supabase first (Standard Upload)
+                const { error } = await supabase.from('audio_cache').upsert({ id: key, audio_base64: base64, created_at: new Date().toISOString() });
+                
+                if (error) {
+                    console.warn("Standard upload failed, attempting CHUNKED upload strategy...", error);
+                    
+                    const CHUNK_SIZE = 1024 * 250; // Reduced to 250KB for better stability
+                    const totalChunks = Math.ceil(base64.length / CHUNK_SIZE);
+                    
+                    // Update status to show we are switching to chunked mode
+                    setStatusMessage({ text: `LARGE_FILE_DETECTED. INITIATING_ROBUST_PROTOCOL...`, type: 'success' });
+
+                    for (let i = 0; i < totalChunks; i++) {
+                        const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                        
+                        // Retry logic for each chunk
+                        let attempts = 0;
+                        let success = false;
+                        
+                        while (!success && attempts < 3) {
+                            attempts++;
+                            const { error: chunkError } = await supabase.from('audio_cache').upsert({ 
+                                id: `${key}_part_${i}`, 
+                                audio_base64: chunk, 
+                                created_at: new Date().toISOString() 
+                            });
+                            
+                            if (!chunkError) {
+                                success = true;
+                            } else {
+                                console.warn(`Chunk ${i} failed (attempt ${attempts}), retrying...`, chunkError);
+                                await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+                            }
+                        }
+                        
+                        if (!success) throw new Error(`Failed to upload chunk ${i} after 3 attempts`);
+                        
+                        // Update status for every chunk to show progress
+                        setStatusMessage({ text: `UPLINKING_SEGMENT_${i+1}/${totalChunks}...`, type: 'success' });
+                        // Significant delay to avoid rate limits
+                        await new Promise(r => setTimeout(r, 300));
+                    }
+                    
+                    // Save the "Manifest" to the main key
+                    await supabase.from('audio_cache').upsert({ 
+                        id: key, 
+                        audio_base64: `CHUNKED_MANIFEST:${totalChunks}`, 
+                        created_at: new Date().toISOString() 
+                    });
+                }
+            } catch (supaErr) {
+                console.warn("Supabase upload failed, falling back to LocalStorage", supaErr);
+                // Fallback to LocalStorage
+                try {
+                    localStorage.setItem(key, base64);
+                    setStatusMessage({ text: `LOCAL_SYNC_ONLY: ${file.name.toUpperCase()}`, type: 'success' });
+                    // Return here so we don't overwrite the success message below
+                    setThemeMusicKey(key);
+                    updateThemeMusic(key);
+                    return; 
+                } catch (localErr) {
+                     console.error("LocalStorage failed too", localErr);
+                     setStatusMessage({ text: "ERR: FILE_TOO_LARGE_FOR_BROWSER", type: 'error' });
+                     return;
+                }
+            }
+            
+            // Update User Profile state
             setThemeMusicKey(key);
             updateThemeMusic(key);
-            setStatusMessage({ text: "GLOBAL_THEME_SYNCHRONIZED", type: 'success' });
+            
+            // Force success message
+            setStatusMessage({ text: `SYNCHRONIZED: ${file.name.toUpperCase()}`, type: 'success' });
+            
         } catch (err) {
+            console.error(err);
             setStatusMessage({ text: "ERR: UPLINK_FAILURE", type: 'error' });
         }
     };
@@ -320,6 +404,24 @@ const AdminPortal: React.FC = () => {
                                             <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{themeMusicKey ? 'OVERRIDE_ACTIVE' : 'UPLOAD_SIGNAL'}</span>
                                         </div>
                                     </div>
+
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-white/5 rounded-xl border border-white/10">
+                                        <div 
+                                            onClick={() => setIsGlobalBroadcast(!isGlobalBroadcast)}
+                                            className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${isGlobalBroadcast ? 'bg-green-500' : 'bg-white/20'}`}
+                                        >
+                                            <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full shadow-md transition-transform ${isGlobalBroadcast ? 'translate-x-5' : 'translate-x-0'}`} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-white tracking-wider">GLOBAL BROADCAST</span>
+                                            <span className="text-[9px] text-white/40">
+                                                {isGlobalBroadcast 
+                                                    ? "System is prioritizing local file (public/background-music.mp3)" 
+                                                    : "Apply upload to your personal profile only"}
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     {themeMusicKey && (
                                         <button onClick={() => { setThemeMusicKey(undefined); updateThemeMusic(undefined); }} className="text-[8px] text-red-500 font-bold uppercase tracking-widest">[ PURGE_OVERRIDE ]</button>
                                     )}

@@ -6,6 +6,7 @@ import { getModuleIntro } from '../data/moduleIntros';
 import { useSound } from '../contexts/SoundContext';
 import { useUser } from '../contexts/UserContext';
 import { decode, decodeAudioData } from '../utils/audio';
+import { generateQwenTTS } from '../utils/qwen';
 import { BrainIcon, SparklesIcon } from './Icons';
 
 interface ModuleIntroSequenceProps {
@@ -102,21 +103,30 @@ const ModuleIntroSequence: React.FC<ModuleIntroSequenceProps> = ({ moduleId, onC
             }
 
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-                const response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash-preview-tts",
-                    contents: [{ parts: [{ text: fullText }] }],
-                    config: {
-                        responseModalities: [Modality.AUDIO],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: { voiceName: 'Charon' },
+                let base64Audio = null;
+                const qwenKey = (import.meta as any).env?.VITE_DASHSCOPE_API_KEY || (process.env as any).VITE_DASHSCOPE_API_KEY;
+
+                if (qwenKey) {
+                    base64Audio = await generateQwenTTS(fullText, qwenKey);
+                }
+
+                if (!base64Audio) {
+                    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+                    const response = await ai.models.generateContent({
+                        model: "gemini-2.5-flash-preview-tts",
+                        contents: [{ parts: [{ text: fullText }] }],
+                        config: {
+                            responseModalities: [Modality.AUDIO],
+                            speechConfig: {
+                                voiceConfig: {
+                                    prebuiltVoiceConfig: { voiceName: 'Charon' },
+                                },
                             },
                         },
-                    },
-                });
+                    });
+                    base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                }
 
-                const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
                 if (base64Audio) {
                     await startPlayback(base64Audio);
                 } else {

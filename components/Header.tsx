@@ -91,11 +91,33 @@ const Header: React.FC<HeaderProps> = ({ userProfile, onResetProgress, onDashboa
                     {/* Left Section */}
                     <div className="flex-1 flex items-center gap-2">
                         <button 
-                            onClick={onDashboardClick} onMouseEnter={playHover}
-                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--gold)]/40 transition-all shrink-0"
+                            onClick={(e) => {
+                                if (e.detail === 3) {
+                                    toggleAdmin();
+                                } else {
+                                    onDashboardClick();
+                                }
+                            }}
+                            onMouseEnter={playHover}
+                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--gold)]/40 transition-all shrink-0 relative group"
+                            title="Dashboard (Triple Click for Admin Access)"
                         >
                             <span className="text-[var(--gold)]"><HomeIcon /></span>
+                            {/* Removed pulsing red indicator for now, or keep it subtle */}
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
+
+                        {/* Music Indicator */}
+                        {settings.musicEnabled && (
+                            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                                <div className="flex gap-0.5 items-end h-3">
+                                    <motion.div className="w-0.5 bg-[var(--gold)]" animate={{ height: [4, 12, 4] }} transition={{ duration: 0.5, repeat: Infinity }} />
+                                    <motion.div className="w-0.5 bg-[var(--gold)]" animate={{ height: [8, 4, 12] }} transition={{ duration: 0.7, repeat: Infinity }} />
+                                    <motion.div className="w-0.5 bg-[var(--gold)]" animate={{ height: [6, 10, 5] }} transition={{ duration: 0.6, repeat: Infinity }} />
+                                </div>
+                                <span className="text-[9px] font-bold text-[var(--gold)] tracking-widest uppercase">Signal_Active</span>
+                            </div>
+                        )}
 
                         <AnimatePresence>
                             {isBriefingActive && (

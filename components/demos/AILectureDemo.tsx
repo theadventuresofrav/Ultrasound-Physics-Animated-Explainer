@@ -276,7 +276,7 @@ const AILectureDemo: React.FC = () => {
                                 <h4 className="text-2xl font-black text-white uppercase tracking-tighter mb-6">Behavioral_Vector</h4>
                                 <p className="text-lg text-white/60 font-light italic leading-relaxed">"{lecture.behavioralMindset}"</p>
                                 <div className="mt-8 pt-8 border-t border-white/5 text-[9px] font-black text-indigo-400 uppercase tracking-widest">
-                                    [ SYSTEMS > GOALS ]
+                                    [ SYSTEMS {'>'} GOALS ]
                                 </div>
                             </div>
 
