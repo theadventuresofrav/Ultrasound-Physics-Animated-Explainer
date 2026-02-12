@@ -16,6 +16,12 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
+  "overrides": {
+    "convex": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "devDependencies": {
     "@rollup/rollup-darwin-arm64": "^4.57.1",
     "@types/node": "^22.14.0",
