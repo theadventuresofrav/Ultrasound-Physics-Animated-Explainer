@@ -186,7 +186,7 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             if (!ctx) return;
 
             const masterGain = ctx.createGain();
-            const volume = settings.musicVolume > 0 ? settings.musicVolume : 0.5;
+            const volume = typeof settings.musicVolume === 'number' ? settings.musicVolume : 0.5;
             masterGain.gain.value = volume;
             masterGain.connect(ctx.destination);
             themeMusicGainRef.current = masterGain;
