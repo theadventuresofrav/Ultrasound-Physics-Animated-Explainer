@@ -191,18 +191,9 @@ export const SoundProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             masterGain.connect(ctx.destination);
             themeMusicGainRef.current = masterGain;
 
-            // STRATEGY: 
-            // 1. Try User's Custom Override
-            // 2. Try GLOBAL BROADCAST (System-wide music)
-            // 3. Fallback to Procedural Drone
-            
-            let musicKeyToPlay = userProfile?.systemOverrides?.themeMusicKey;
+            // Default to Global Broadcast if not set
+            const musicKeyToPlay = userProfile?.systemOverrides?.themeMusicKey || 'GLOBAL_BROADCAST_SIGNAL';
             let playedCustom = false;
-            
-            // If user has no personal override, check for global broadcast
-             if (!musicKeyToPlay) {
-                 musicKeyToPlay = 'GLOBAL_BROADCAST_SIGNAL';
-             }
 
              // SPECIAL BYPASS: If Global Broadcast, try to load from /background-music.mp3 first
              // This bypasses the database entirely and uses the file in the public/ folder.
